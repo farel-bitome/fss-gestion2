@@ -1,0 +1,94 @@
+FSS-GESTION — Creation du fichier .exe
+========================================
+
+Deux methodes possibles. La methode B ne necessite RIEN a installer
+sur ton ordinateur (GitHub construit le .exe a ta place, gratuitement).
+
+===========================================================
+METHODE B — Construction automatique dans le cloud (recommandee)
+===========================================================
+1. Va sur https://github.com et cree un compte gratuit (si tu n'en as pas)
+2. Cree un nouveau depot (bouton "New repository"), nom libre,
+   par exemple "fss-gestion", visibilite "Private" ou "Public"
+3. Sur la page du depot vide, clique "uploading an existing file"
+4. Glisse-depose TOUT le contenu de ce dossier (y compris le dossier
+   cache .github avec le fichier build.yml a l'interieur) puis
+   clique "Commit changes"
+5. Va dans l'onglet "Actions" en haut du depot
+6. Un traitement "Build FSS-GESTION.exe" doit demarrer automatiquement
+   (sinon clique dessus puis "Run workflow")
+7. Attends 3-5 minutes que le rond jaune devienne une coche verte
+8. Clique sur le traitement termine, puis tout en bas dans
+   "Artifacts", clique sur "FSS-GESTION-exe" pour telecharger
+   un zip contenant le fichier .exe pret a l'emploi
+
+===========================================================
+METHODE A — Construction locale (necessite Node.js)
+===========================================================
+ETAPE 1 — Installer Node.js (5 minutes)
+----------------------------------------
+1. Va sur https://nodejs.org
+2. Telecharge la version "LTS" (recommandee)
+3. Installe-la normalement (Suivant, Suivant, Terminer)
+
+ETAPE 2 — Preparer le dossier
+----------------------------------------
+1. Decompresse ce dossier quelque part de simple, par exemple :
+   C:\FSS-GESTION\
+2. Verifie qu'il contient bien 3 fichiers :
+   - main.js
+   - package.json
+   - FSS-GESTION.html
+
+ETAPE 3 — Ouvrir une invite de commandes dans ce dossier
+----------------------------------------
+1. Ouvre le dossier C:\FSS-GESTION\ dans l'Explorateur Windows
+2. Dans la barre d'adresse en haut, tape "cmd" puis appuie sur Entree
+   (une fenetre noire s'ouvre, deja positionnee dans le bon dossier)
+
+ETAPE 4 — Installer les outils necessaires
+----------------------------------------
+Dans la fenetre noire, tape la commande suivante puis Entree :
+
+    npm install
+
+Ca va telecharger Electron (le moteur qui transforme le logiciel en
+application Windows). Ca peut prendre plusieurs minutes, c'est normal.
+
+(Optionnel) Pour tester avant de construire le .exe, tape :
+
+    npm start
+
+Le logiciel doit s'ouvrir dans une fenetre comme une vraie application.
+Ferme-la pour continuer.
+
+ETAPE 5 — Construire le fichier .exe
+----------------------------------------
+Toujours dans la meme fenetre, tape :
+
+    npm run dist
+
+Ca peut prendre quelques minutes. A la fin, un nouveau dossier "dist"
+apparait dans C:\FSS-GESTION\.
+
+ETAPE 6 — Recuperer le .exe
+----------------------------------------
+Ouvre le dossier "dist". Tu y trouveras un fichier du type :
+
+    FSS-GESTION Setup 1.0.0.exe
+
+C'est l'installeur. Double-clique dessus pour installer le logiciel
+comme n'importe quel programme Windows. Une icone sera creee, et le
+logiciel s'ouvrira dans sa propre fenetre, sans navigateur visible.
+
+Tu peux copier ce fichier .exe sur n'importe quel autre ordinateur
+Windows et l'installer de la meme facon — plus besoin de Node.js
+sur les ordinateurs qui l'utilisent ensuite, seulement sur celui
+qui construit le .exe.
+
+NOTE IMPORTANTE
+----------------------------------------
+Les donnees (agents, chiens, clients, paie...) restent stockees sur
+chaque ordinateur ou le logiciel est installe. Utilise l'onglet
+Parametres > Sauvegarde > Exporter / Importer pour transferer les
+donnees d'un ordinateur a un autre.

@@ -1,0 +1,2480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>FSS-GESTION</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#161b22;
+    --paper:#f5f6f8;
+    --card:#ffffff;
+    --line:#e1e4e9;
+    --muted:#6b7280;
+    --accent:#2f4b7c;
+    --accent-ink:#ffffff;
+    --danger:#b3261e;
+    --ok:#1e7a4c;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:var(--sans); background:var(--paper); color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  header.app{
+    background:var(--ink); color:#fff; padding:18px 28px; display:flex; align-items:center; gap:14px;
+    position:relative; z-index:1;
+  }
+  header.app .mark{
+    width:34px; height:34px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:11px; letter-spacing:.3px;
+  }
+  header.app h1{font-size:16px; margin:0; font-weight:600; letter-spacing:.2px;}
+  header.app p{margin:0; font-size:12px; color:#9aa4b2;}
+
+  nav.tabs{
+    display:flex; gap:2px; background:#fff; border-bottom:1px solid var(--line); padding:0 24px;
+    position:relative; z-index:1;
+  }
+  nav.tabs button{
+    border:none; background:transparent; padding:14px 18px; font-size:13.5px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; font-family:var(--sans);
+  }
+  nav.tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+  nav.tabs button .num{
+    display:inline-block; width:18px; height:18px; border-radius:50%; background:var(--line); color:var(--ink);
+    font-size:11px; text-align:center; line-height:18px; margin-right:7px;
+  }
+  nav.tabs button.active .num{background:var(--accent); color:#fff;}
+
+  main{max-width:1180px; margin:0 auto; padding:28px 24px 80px; position:relative; z-index:1;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .grid2{display:grid; grid-template-columns:1.1fr .9fr; gap:24px;}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
+
+  .card-box{
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px 24px; margin-bottom:20px;
+  }
+  .card-box h2{font-size:14px; margin:0 0 4px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted);}
+  .card-box h2 span{color:var(--ink); text-transform:none; letter-spacing:0; font-size:16px; display:block; margin-top:2px; font-weight:700;}
+
+  label.field{display:block; margin-bottom:14px;}
+  label.field span{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px;}
+  label.field input[type=text], label.field input[type=email], label.field input[type=tel], label.field textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:var(--sans); background:#fcfcfd;
+  }
+  label.field textarea{resize:vertical; min-height:56px;}
+  .row{display:flex; gap:14px;}
+  .row > label.field{flex:1;}
+
+  .swatch-row{display:flex; gap:16px; flex-wrap:wrap;}
+  .swatch{display:flex; align-items:center; gap:8px; background:#fcfcfd; border:1px solid var(--line); border-radius:8px; padding:8px 10px;}
+  .swatch input[type=color]{width:30px; height:30px; border:none; padding:0; background:none; cursor:pointer;}
+  .swatch span{font-size:12.5px; font-weight:600; color:var(--muted);}
+
+  .logo-drop{
+    border:1.5px dashed var(--line); border-radius:9px; padding:16px; text-align:center; cursor:pointer; background:#fcfcfd;
+  }
+  .logo-drop img{max-height:60px; max-width:100%;}
+  .logo-drop p{margin:6px 0 0; font-size:12px; color:var(--muted);}
+
+  button.btn{
+    border:none; border-radius:7px; padding:10px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--sans);
+  }
+  button.btn.primary{background:var(--accent); color:var(--accent-ink);}
+  button.btn.ghost{background:#fff; border:1px solid var(--line); color:var(--ink);}
+  button.btn.small{padding:6px 10px; font-size:12px; border-radius:6px;}
+  button.btn:disabled{opacity:.45; cursor:not-allowed;}
+  button.btn.danger{background:#fff; border:1px solid var(--danger); color:var(--danger);}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;}
+  input[type=file]{display:none;}
+
+  table.agents{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.agents th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted);
+    border-bottom:1px solid var(--line); padding:8px 8px;
+  }
+  table.agents td{border-bottom:1px solid var(--line); padding:6px 8px; vertical-align:middle;}
+  table.agents input{width:100%; border:1px solid transparent; background:transparent; font-size:12.5px; padding:4px 5px; border-radius:5px; font-family:var(--sans);}
+  table.agents input:focus{border-color:var(--accent); background:#fff; outline:none;}
+  .photo-thumb{width:34px; height:34px; border-radius:7px; object-fit:cover; background:var(--line); display:block;}
+  .status-pill{font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600;}
+  .status-pill.ok{background:#e4f5ec; color:var(--ok);}
+  .status-pill.missing{background:#fbeceb; color:var(--danger);}
+
+  .empty-state{padding:40px 20px; text-align:center; color:var(--muted); font-size:13px;}
+
+  .cards-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:22px;}
+  .agent-card-block{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px;}
+  .agent-card-block .name{font-weight:700; font-size:13px; margin-bottom:8px;}
+  .canvases{display:flex; gap:8px; margin-bottom:10px;}
+  .canvases canvas{width:100%; border-radius:6px; border:1px solid var(--line); background:#fff;}
+  .side-label{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:3px;}
+  .dl-row{display:flex; gap:8px;}
+
+  .hint{font-size:12px; color:var(--muted); line-height:1.5;}
+  .hint code{background:#eef0f3; padding:1px 5px; border-radius:4px; font-family:var(--mono); font-size:11.5px;}
+
+  #qr-scratch{position:absolute; left:-9999px; top:-9999px;}
+
+  .counter-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); background:#fff;
+    border:1px solid var(--line); padding:6px 12px; border-radius:20px;
+  }
+  .counter-badge b{color:var(--ink);}
+
+  /* Caméra modal */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(15,18,24,.72); z-index:1000;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff; border-radius:12px; padding:20px; width:min(520px,92vw);
+  }
+  .modal-box h3{margin:0 0 4px; font-size:15px;}
+  .modal-box p.sub{margin:0 0 14px; font-size:12.5px; color:var(--muted);}
+  .cam-frame{
+    position:relative; width:100%; aspect-ratio:4/3; background:#111; border-radius:9px; overflow:hidden;
+  }
+  .cam-frame video, .cam-frame canvas{width:100%; height:100%; object-fit:cover; display:block;}
+  .cam-frame .oval-guide{
+    position:absolute; inset:8% 26%; border:2px dashed rgba(255,255,255,.55); border-radius:50%; pointer-events:none;
+  }
+  .cam-error{
+    padding:16px; font-size:12.5px; color:var(--danger); background:#fbeceb; border-radius:8px; line-height:1.5;
+  }
+  .modal-actions{display:flex; gap:10px; margin-top:14px; justify-content:flex-end;}
+
+  .sub-tabs{display:flex; gap:4px; border-bottom:1px solid var(--line); margin:14px 0 18px;}
+  .sub-tab-btn{
+    border:none; background:transparent; padding:9px 14px; font-size:12.5px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; font-family:var(--sans);
+  }
+  .sub-tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .sub-panel{display:none;}
+  .sub-panel.active{display:block;}
+  .perm-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;}
+  .perm-item{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink);}
+  .perm-item input{width:15px; height:15px; flex-shrink:0;}
+
+  /* Login screen */
+  #activation-screen{
+    position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:2100;
+  }
+  #login-screen{
+    position:fixed; inset:0; background:var(--ink); display:none; align-items:center; justify-content:center; z-index:2000;
+  }
+  #login-credit{
+    position:absolute; left:24px; bottom:18px; font-size:11.5px; color:#7c8698; letter-spacing:.3px;
+  }
+  .login-tab-btn{
+    border:none; background:transparent; padding:0 0 10px; font-size:13px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; font-family:var(--sans);
+  }
+  .login-tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .login-tab-panel{display:none;}
+  .login-tab-panel.active{display:block;}
+  .login-box{
+    background:#fff; border-radius:14px; padding:36px 34px; width:min(380px,90vw); text-align:left;
+  }
+  .login-box .mark{width:40px; height:40px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; letter-spacing:.3px; margin-bottom:16px;}
+  .login-box h2{margin:0 0 4px; font-size:18px;}
+  .login-box p.sub{margin:0 0 20px; font-size:12.5px; color:var(--muted);}
+  .login-box label.field{margin-bottom:12px;}
+  .login-box button.btn{width:100%; margin-top:6px;}
+  .login-toggle{text-align:center; margin-top:14px; font-size:12.5px; color:var(--muted);}
+  .login-toggle a{color:var(--accent); cursor:pointer; font-weight:600; text-decoration:none;}
+  .login-error{background:#fbeceb; color:var(--danger); font-size:12.5px; padding:9px 11px; border-radius:7px; margin-bottom:12px; display:none;}
+  .login-info{background:#eef2f7; color:var(--muted); font-size:11.5px; padding:9px 11px; border-radius:7px; margin-top:14px; line-height:1.5;}
+  #db-config-box{margin-top:16px; padding-top:16px; border-top:1px solid var(--line);}
+  #db-config-box summary{cursor:pointer; font-size:12px; color:var(--muted); font-weight:600;}
+  #db-config-box input{width:100%; margin-top:8px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:var(--mono);}
+
+  /* Alerts */
+  .alert-row{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:9px; border:1px solid var(--line); margin-bottom:8px; background:#fff;}
+  .alert-row.urgent{border-color:#f0c4c0; background:#fdf4f3;}
+  .alert-row.soon{border-color:#f2ddb0; background:#fdf9ef;}
+  .alert-row .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .alert-row.urgent .dot{background:var(--danger);}
+  .alert-row.soon .dot{background:#b5820b;}
+  .alert-row .who{font-weight:700; font-size:13px; flex:1;}
+  .alert-row .what{font-size:12.5px; color:var(--muted);}
+  .alert-row .when{font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px; background:#fff;}
+  .table-scroll{overflow-x:auto;}
+
+  .a4-overlay{
+    position:fixed; inset:0; background:rgba(15,18,24,.55); z-index:1500; display:none;
+    align-items:flex-start; justify-content:center; overflow-y:auto; padding:32px 16px;
+  }
+  .a4-overlay.open{display:flex;}
+  .a4-sheet{
+    background:#fff; width:210mm; max-width:94vw; min-height:auto; border-radius:4px;
+    box-shadow:0 12px 48px rgba(0,0,0,.35); padding:18mm 16mm; position:relative;
+  }
+  .a4-sheet h2{margin:0 0 4px; font-size:19px;}
+  .a4-sheet p.sub{margin:0 0 22px; font-size:12.5px; color:var(--muted);}
+  .a4-section{margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--line);}
+  .a4-section:last-of-type{border-bottom:none;}
+  .a4-section h3{font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent); margin:0 0 14px; font-weight:700;}
+  .a4-photo-row{display:flex; gap:20px; align-items:flex-start;}
+  .a4-photo-box{width:120px; height:120px; border-radius:10px; border:1.5px dashed var(--line); background:#fcfcfd; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;}
+  .a4-photo-box img{width:100%; height:100%; object-fit:cover; display:none;}
+  .a4-actions{display:flex; gap:10px; margin-top:8px; position:sticky; bottom:0; background:#fff; padding-top:16px;}
+
+  /* Filigrane anime en arriere-plan */
+  #bg-watermark{position:fixed; inset:0; overflow:hidden; z-index:0; pointer-events:none;}
+  #bg-watermark img{
+    position:absolute; width:360px; height:auto; top:50%; left:50%; opacity:.05;
+    transform:translate(-60%,-55%) rotate(0deg);
+    animation:watermarkFloat 50s ease-in-out infinite;
+  }
+  @keyframes watermarkFloat{
+    0%{transform:translate(-70%,-60%) rotate(0deg);}
+    25%{transform:translate(-35%,-65%) rotate(4deg);}
+    50%{transform:translate(-45%,-30%) rotate(-3deg);}
+    75%{transform:translate(-65%,-40%) rotate(3deg);}
+    100%{transform:translate(-70%,-60%) rotate(0deg);}
+  }
+  @media (prefers-reduced-motion: reduce){ #bg-watermark img{animation:none;} }
+</style>
+</head>
+<body>
+
+<div id="bg-watermark"><img id="bg-watermark-img" style="display:none;"></div>
+
+<header class="app">
+  <div class="mark">FSS</div>
+  <div style="flex:1;">
+    <h1>FSS-GESTION</h1>
+    <p>Paramètres société (en haut) → agents → génération recto/verso</p>
+  </div>
+  <span id="user-pill" class="counter-badge" style="background:transparent;border-color:#3a4454;color:#cfd6e0;margin-right:4px;"></span>
+  <button class="btn ghost" id="btn-open-settings" onclick="openSettings()" style="background:transparent; border-color:#3a4454; color:#fff;">⚙ Paramètres société</button>
+  <button class="btn ghost" onclick="logout()" style="background:transparent; border-color:#3a4454; color:#fff;">Deconnexion</button>
+</header>
+
+<div id="activation-screen">
+  <div class="login-box">
+    <div class="mark">FSS</div>
+    <h2>Activation du logiciel</h2>
+    <p class="sub">Ce logiciel doit être activé une seule fois sur cet ordinateur avant la première utilisation.</p>
+    <div class="login-error" id="activation-error"></div>
+    <label class="field"><span>Code d'activation</span>
+      <input type="text" id="activation-code-input" placeholder="Code fourni par FALLSERVICES&SOLUTIONS" onkeydown="if(event.key==='Enter') handleActivation();">
+    </label>
+    <button class="btn primary" id="activation-submit" onclick="handleActivation()">Activer le logiciel</button>
+  </div>
+  <div id="login-credit">développé par FALLSERVICES&SOLUTIONS</div>
+</div>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="mark">FSS</div>
+    <div style="display:flex; gap:16px; border-bottom:1px solid var(--line); margin-bottom:16px;">
+      <button class="login-tab-btn active" data-logintab="login-tab-connexion" onclick="switchLoginTab('login-tab-connexion', this)">Connexion</button>
+      <button class="login-tab-btn" data-logintab="login-tab-aide" onclick="switchLoginTab('login-tab-aide', this)">Aide</button>
+    </div>
+
+    <div id="login-tab-connexion" class="login-tab-panel active">
+      <h2 id="login-title">Connexion</h2>
+      <p class="sub">Identifiant par défaut : <b>admin</b> / mot de passe : <b>admin</b> (à changer dans Paramètres).</p>
+      <div class="login-error" id="login-error"></div>
+      <label class="field"><span>Identifiant</span>
+        <input type="text" id="login-email" placeholder="admin" onkeydown="if(event.key==='Enter') handleLogin();">
+      </label>
+      <label class="field"><span>Mot de passe</span>
+        <input type="text" id="login-password" placeholder="••••••••" style="-webkit-text-security:disc;" onkeydown="if(event.key==='Enter') handleLogin();">
+      </label>
+      <button class="btn primary" id="login-submit" onclick="handleLogin()">Se connecter</button>
+    </div>
+
+    <div id="login-tab-aide" class="login-tab-panel">
+      <h2>Aide pour activer le logiciel</h2>
+      <p class="sub" style="margin-bottom:16px;">Assistance pour la première connexion et l'activation.</p>
+      <div style="font-size:12.5px; color:var(--muted); line-height:1.7;">
+        <p>Ce logiciel est fourni avec un compte administrateur par défaut, communiqué séparément
+        par la personne ou le service qui te l'a installé. Utilise ces identifiants pour te connecter
+        la première fois, puis change le mot de passe dans <b>Paramètres société → Utilisateurs</b>.</p>
+        <p>Si tu ne connais pas ou plus tes identifiants d'accès, contacte l'administrateur de ton
+        organisation, ou l'éditeur du logiciel : <b>FALLSERVICES&SOLUTIONS</b>.</p>
+        <p>Un compte super administrateur protégé existe également pour la maintenance du logiciel.
+        Il est réservé exclusivement à l'éditeur et ne doit jamais être partagé ni communiqué.</p>
+      </div>
+      <button class="btn ghost small" style="margin-top:16px;" onclick="switchLoginTab('login-tab-connexion', document.querySelector('.login-tab-btn'))">← Retour à la connexion</button>
+    </div>
+  </div>
+  <div id="login-credit">développé par FALLSERVICES&SOLUTIONS</div>
+</div>
+
+<nav class="tabs">
+  <button class="active" data-tab="tab-agents"><span class="num">1</span>Agents</button>
+  <button data-tab="tab-chiens"><span class="num">2</span>Chiens</button>
+  <button data-tab="tab-clients"><span class="num">3</span>Clients</button>
+  <button data-tab="tab-alertes"><span class="num">4</span>Alertes <span id="alert-count" class="status-pill missing" style="display:none;"></span></button>
+  <button data-tab="tab-paie"><span class="num">5</span>Paie</button>
+  <button data-tab="tab-generer"><span class="num">6</span>Générer</button>
+</nav>
+
+<main>
+
+  <!-- ============ TAB 1 : AGENTS ============ -->
+  <section class="panel active" id="tab-agents">
+    <div class="card-box">
+      <h2>Import <span>Depuis un fichier Excel</span></h2>
+      <p class="hint">Le fichier doit contenir une feuille <code>Agents</code> avec les colonnes : <code>Matricule, Nom, Prenom, Fonction, Service, Téléphone, Email, Date_Embauche, Nom_Fichier_Photo</code>. Une feuille <code>Paramètres</code> est aussi lue automatiquement si présente (nom société, couleurs, logo...).</p>
+      <div class="toolbar" style="margin-top:14px;">
+        <button class="btn primary" onclick="document.getElementById('excel-input').click()">Importer le fichier Excel</button>
+        <input type="file" id="excel-input" accept=".xlsx,.xls,.csv">
+        <button class="btn ghost" onclick="document.getElementById('photos-input').click()">Importer les photos (+ logo)</button>
+        <input type="file" id="photos-input" accept="image/*" multiple>
+        <span class="hint">ou utilise le bouton <b>📷 Prendre</b> directement sur chaque ligne du tableau ci-dessous.</span>
+        <button class="btn ghost" onclick="openAgentForm(null)">+ Ajouter un agent manuellement</button>
+        <span class="counter-badge" id="agents-counter"><b>0</b> agent(s)</span>
+        <span class="counter-badge" id="photos-counter"><b>0</b> photo(s) associée(s)</span>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <h2>Liste <span>Agents enregistres</span></h2>
+      <div id="agents-table-wrap">
+        <div class="empty-state">Aucun agent pour l'instant. Importe un fichier Excel ou ajoute un agent manuellement.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2 : CHIENS ============ -->
+  <section class="panel" id="tab-chiens">
+    <div class="card-box">
+      <button class="btn ghost small" onclick="goToTab('tab-agents')" style="margin-bottom:14px;">← Retour</button>
+      <h2>Chiens <span>Chiens de la société (garde, patrouille...)</span></h2>
+      <div class="toolbar" style="margin-top:14px;">
+        <button class="btn ghost" onclick="addChienRow()">+ Ajouter un chien</button>
+        <span class="counter-badge" id="chiens-counter"><b>0</b> chien(s)</span>
+      </div>
+      <div id="chiens-table-wrap">
+        <div class="empty-state">Aucun chien pour l'instant.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3 : CLIENTS ============ -->
+  <section class="panel" id="tab-clients">
+    <div class="card-box">
+      <h2>Clients <span>Clients de la société</span></h2>
+      <div class="toolbar" style="margin-top:14px;">
+        <button class="btn ghost" onclick="addClientRow()">+ Ajouter un client</button>
+        <span class="counter-badge" id="clients-counter"><b>0</b> client(s)</span>
+      </div>
+      <div id="clients-table-wrap">
+        <div class="empty-state">Aucun client pour l'instant.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 4 : ALERTES ============ -->
+  <section class="panel" id="tab-alertes">
+    <div class="card-box">
+      <h2>Seuil <span>Délai d'anticipation des alertes</span></h2>
+      <label class="field" style="max-width:220px;"><span>Alerter</span>
+        <input type="text" id="alert-threshold" value="30">
+      </label>
+      <span class="hint">Nombre de jours avant l'échéance pour afficher une alerte "a prévoir". Modifie puis clique sur "Recalculer".</span>
+      <div style="margin-top:12px;"><button class="btn ghost small" onclick="renderAlerts()">Recalculer</button></div>
+    </div>
+
+    <div class="card-box">
+      <h2>Contrats agents <span>Renouvellements a prévoir</span></h2>
+      <div id="alerts-contrats"><div class="empty-state">Aucune donnée. Renseigne le type et la date de fin de contrat des agents.</div></div>
+    </div>
+
+    <div class="card-box">
+      <h2>Contrats clients <span>Renouvellements a prévoir</span></h2>
+      <div id="alerts-contrats-clients"><div class="empty-state">Aucune donnée. Renseigne la date de fin de contrat des clients.</div></div>
+    </div>
+
+    <div class="card-box">
+      <h2>Vaccins agents <span>Rappels a prévoir</span></h2>
+      <div id="alerts-vaccins"><div class="empty-state">Aucune donnée. Renseigne le statut vaccinal des agents.</div></div>
+    </div>
+
+    <div class="card-box">
+      <h2>Vaccins chiens <span>Rappels a prévoir</span></h2>
+      <div id="alerts-vaccins-chiens"><div class="empty-state">Aucune donnée. Renseigne le statut vaccinal des chiens.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 5 : PAIE ============ -->
+  <section class="panel" id="tab-paie">
+    <div class="card-box" style="background:#fdf9ef; border-color:#f2ddb0;">
+      <h2 style="color:#8a6a10;">Important <span style="color:var(--ink);">A vérifier avant tout usage reel</span></h2>
+      <p class="hint">Les taux CNSS/CNAMGS et les tranches d'IRPP évoluent (une réforme des cotisations sociales est entrée en vigueur au Gabon le 1er janvier 2026) et certaines sources publiques se contredisent, y compris sur le SMIG. Ce module calcule la paie à partir des <b>taux que tu renseignes toi-même</b> ci-dessous — il ne fixe aucun taux officiel. Avant d'émettre un vrai bulletin de paie, confirme les chiffres auprès de la CNSS, de la CNAMGS et de la Direction Générale des Impôts (DGI), ou avec un comptable/expert-paie. Ce logiciel n'est pas un conseiller juridique ou fiscal.</p>
+    </div>
+
+    <div class="card-box">
+      <h2>Paramètres de paie <span>Taux et règles appliques aux calculs</span></h2>
+      <div class="row">
+        <label class="field"><span>SMIG / salaire de base minimum (FCFA/mois)</span>
+          <input type="text" id="paie-smig" value="150000">
+        </label>
+        <label class="field"><span>Plafond mensuel soumis a cotisations (FCFA)</span>
+          <input type="text" id="paie-plafond" value="1500000">
+        </label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Taux CNSS salarié (%)</span><input type="text" id="paie-cnss-sal" value="2.5"></label>
+        <label class="field"><span>Taux CNSS employeur (%)</span><input type="text" id="paie-cnss-pat" value="16"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Taux CNAMGS salarié (%)</span><input type="text" id="paie-cnamgs-sal" value="2"></label>
+        <label class="field"><span>Taux CNAMGS employeur (%)</span><input type="text" id="paie-cnamgs-pat" value="4.1"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Congés payés (jours acquis / mois travaillé)</span><input type="text" id="paie-conges" value="1.5"></label>
+        <label class="field"><span>Majoration heures sup. jour ouvrable (%)</span><input type="text" id="paie-hs-ouvrable" value="15"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Majoration heures sup. dimanche/ferie (%)</span><input type="text" id="paie-hs-dimanche" value="40"></label>
+        <label class="field"><span>Prime ancienneté (% du salaire de base / an, plafonné)</span><input type="text" id="paie-anciennete-taux" value="2"></label>
+      </div>
+      <label class="field" style="max-width:260px;"><span>Plafond prime ancienneté (%)</span><input type="text" id="paie-anciennete-plafond" value="25"></label>
+
+      <label class="field" style="margin:16px 0 8px;"><span>Tranches d'IRPP (bareme progressif)</span></label>
+      <div id="irpp-tranches-wrap"></div>
+      <button class="btn ghost small" onclick="addIrppTranche()">+ Ajouter une tranche</button>
+
+      <div style="margin-top:16px;">
+        <button class="btn primary" onclick="savePaieSettings()">Enregistrer les paramètres de paie</button>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <h2>Bulletins <span>Calcul mensuel par agent</span></h2>
+      <div class="toolbar" style="margin-top:6px;">
+        <button class="btn ghost" onclick="printRegistrePaie()">🖨 Imprimer le registre de paie</button>
+        <span class="hint">Salaire de base et primes se modifient directement dans le tableau.</span>
+      </div>
+      <div id="paie-table-wrap">
+        <div class="empty-state">Aucun agent. Ajoute des agents dans l'onglet Agents pour calculer leur paie.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 6 : GENERER ============ -->
+  <section class="panel" id="tab-generer">
+    <div class="card-box">
+      <div class="toolbar" style="margin-bottom:0;">
+        <button class="btn primary" id="btn-render" onclick="renderAllCards()">Générer les aperçus</button>
+        <button class="btn ghost" id="btn-print" onclick="printAllCards()" disabled>🖨 Imprimer (recto + verso)</button>
+        <button class="btn ghost" id="btn-pdf" onclick="exportAllPDF()" disabled>Telecharger le PDF complet (recto + verso)</button>
+      </div>
+      <p class="hint" style="margin-top:10px;">Format carte : CR80 (85,6 x 53,98 mm), impression 300 DPI. Pour l'impression directe, choisis "Taille reelle / 100%" (pas "Ajuster a la page") dans la fenêtre d'impression, et si possible un format papier "85,6 x 53,98 mm" ou une imprimante a cartes.</p>
+    </div>
+    <div class="cards-grid" id="cards-grid">
+      <div class="empty-state">Aucun aperçu généré. Ajoute des agents puis clique sur "Générer les aperçus".</div>
+    </div>
+  </section>
+
+</main>
+
+<div id="qr-scratch"></div>
+
+<div class="modal-overlay" id="cam-modal">
+  <div class="modal-box">
+    <h3 id="cam-title">Prendre la photo</h3>
+    <p class="sub">Cadre le visage dans le repère, puis capture. Tu pourras reprendre si besoin.</p>
+    <label class="field" id="cam-select-wrap" style="display:none; margin-bottom:10px;">
+      <span>Caméra</span>
+      <select id="cam-device-select" onchange="onCameraSelected(this.value)" style="width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:var(--sans); background:#fcfcfd;"></select>
+    </label>
+    <div class="cam-frame" id="cam-frame">
+      <video id="cam-video" autoplay playsinline></video>
+      <canvas id="cam-canvas" style="display:none;"></canvas>
+      <div class="oval-guide" id="cam-guide"></div>
+    </div>
+    <div id="cam-error-holder"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeCamera()">Annuler</button>
+      <button class="btn primary" id="cam-capture-btn" onclick="captureOrRetake()">Capturer</button>
+    </div>
+  </div>
+</div>
+
+<div class="a4-overlay" id="agent-form-modal">
+  <div class="a4-sheet">
+    <h2 id="agent-form-title">Nouvel agent</h2>
+    <p class="sub">Fiche de renseignement de l'agent.</p>
+
+    <div class="a4-section">
+      <h3>Photo</h3>
+      <div class="a4-photo-row">
+        <div class="a4-photo-box">
+          <img id="af-photo-preview">
+          <span id="af-photo-placeholder" class="hint" style="text-align:center; padding:10px;">Aucune photo</span>
+        </div>
+        <div>
+          <div class="toolbar" style="margin-bottom:0;">
+            <button class="btn ghost small" onclick="document.getElementById('af-photo-input').click()">Importer un fichier</button>
+            <input type="file" id="af-photo-input" accept="image/*">
+            <button class="btn ghost small" onclick="openCamera(null, true)">📷 Prendre une photo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Identité</h3>
+      <div class="row">
+        <label class="field"><span>Matricule</span><input type="text" id="af-matricule"></label>
+        <label class="field"><span>Date d'embauche</span><input type="date" id="af-dateembauche"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Nom</span><input type="text" id="af-nom"></label>
+        <label class="field"><span>Prenom</span><input type="text" id="af-prenom"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Fonction</span><input type="text" id="af-fonction"></label>
+        <label class="field"><span>Service</span><input type="text" id="af-service"></label>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Contact</h3>
+      <div class="row">
+        <label class="field"><span>Téléphone</span><input type="text" id="af-telephone"></label>
+        <label class="field"><span>Email</span><input type="text" id="af-email"></label>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Contrat</h3>
+      <div class="row">
+        <label class="field"><span>Type de contrat</span>
+          <select id="af-typecontrat">
+            <option value="CDI">CDI</option>
+            <option value="CDD">CDD</option>
+            <option value="Stage">Stage</option>
+            <option value="Interim">Interim</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </label>
+        <label class="field"><span>Debut du contrat</span><input type="date" id="af-datedebut"></label>
+        <label class="field"><span>Fin du contrat</span><input type="date" id="af-datefin"></label>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Rémunération</h3>
+      <div class="row">
+        <label class="field"><span>Salaire de base mensuel (FCFA)</span><input type="text" id="af-salaire"></label>
+        <label class="field"><span>Prime de transport (FCFA)</span><input type="text" id="af-primetransport"></label>
+        <label class="field"><span>Prime de logement (FCFA)</span><input type="text" id="af-primelogement"></label>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Santé</h3>
+      <div class="row">
+        <label class="field"><span>Vaccin a jour</span>
+          <select id="af-vaccin"><option value="true">Oui</option><option value="false">Non</option></select>
+        </label>
+        <label class="field"><span>Date de rappel vaccin</span><input type="date" id="af-daterappel"></label>
+      </div>
+    </div>
+
+    <div class="a4-section">
+      <h3>Notes</h3>
+      <label class="field"><textarea id="af-notes" style="min-height:70px;"></textarea></label>
+    </div>
+
+    <div class="a4-actions">
+      <button class="btn ghost" onclick="closeAgentForm()">Annuler</button>
+      <button class="btn primary" onclick="saveAgentForm()">Enregistrer l'agent</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal-box" style="width:min(760px,94vw); max-height:88vh; overflow-y:auto;">
+    <h3>Paramètres de la société</h3>
+    <p class="sub">Ces informations et couleurs s'appliquent a toutes les cartes générées. Distinct de la liste des agents.</p>
+
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" data-subtab="settings-tab-identite">Identité</button>
+      <button class="sub-tab-btn" data-subtab="settings-tab-apparence">Apparence</button>
+      <button class="sub-tab-btn" data-subtab="settings-tab-users">Utilisateurs</button>
+      <button class="sub-tab-btn" data-subtab="settings-tab-backup">Sauvegarde</button>
+    </div>
+
+    <div class="sub-panel active" id="settings-tab-identite">
+      <button class="btn ghost small" onclick="closeSettings()" style="margin-bottom:14px;">← Retour</button>
+      <label class="field"><span>Nom de la société</span>
+        <input type="text" id="cfg-name" value="MA SOCIETE SARL">
+      </label>
+      <label class="field"><span>Slogan (optionnel)</span>
+        <input type="text" id="cfg-slogan" value="Securite - Fiabilite - Confiance">
+      </label>
+      <div class="row">
+        <label class="field"><span>Téléphone société</span>
+          <input type="text" id="cfg-phone" value="011 00 00 00">
+        </label>
+        <label class="field"><span>Site web</span>
+          <input type="text" id="cfg-web" value="www.masociete.com">
+        </label>
+      </div>
+      <label class="field"><span>Adresse</span>
+        <input type="text" id="cfg-address" value="Libreville, Gabon">
+      </label>
+      <div class="row">
+        <label class="field"><span>RCCM</span>
+          <input type="text" id="cfg-rccm" placeholder="ex: GA-LBV-01-2024-B12-00001">
+        </label>
+        <label class="field"><span>NIF</span>
+          <input type="text" id="cfg-nif" placeholder="ex: 123456789">
+        </label>
+      </div>
+      <span class="hint">RCCM et NIF sont conserves pour tes documents administratifs uniquement — ils n'apparaissent jamais sur les cartes imprimees.</span>
+      <label class="field" style="margin-top:14px;"><span>Mention au verso (consignes / objet trouve)</span>
+        <textarea id="cfg-backnote">Cette carte est strictement personnelle et demeure la propriete de la société. En cas de perte ou de decouverte, merci de la retourner a l'adresse ci-dessus.</textarea>
+      </label>
+    </div>
+
+    <div class="sub-panel" id="settings-tab-apparence">
+      <button class="btn ghost small" onclick="closeSettings()" style="margin-bottom:14px;">← Retour</button>
+      <div class="grid2">
+        <div>
+          <label class="field" style="margin-bottom:10px;"><span>Couleurs</span></label>
+          <div class="swatch-row" style="margin-bottom:16px;">
+            <div class="swatch"><input type="color" id="cfg-primary" value="#1F4E78"><span>Primaire</span></div>
+            <div class="swatch"><input type="color" id="cfg-secondary" value="#FFFFFF"><span>Fond</span></div>
+            <div class="swatch"><input type="color" id="cfg-text" value="#FFFFFF"><span>Texte</span></div>
+          </div>
+
+          <label class="field" style="margin-bottom:8px;"><span>Logo (en-tete + filigrane verso)</span></label>
+          <div class="logo-drop" id="logo-drop">
+            <img id="logo-preview" style="display:none;">
+            <div id="logo-placeholder">
+              <p style="margin:0;font-size:13px;font-weight:600;color:var(--ink);">Cliquer pour choisir un logo</p>
+              <p>PNG transparent recommande</p>
+            </div>
+          </div>
+          <input type="file" id="logo-input" accept="image/*">
+
+          <label class="field" style="margin:16px 0 8px;"><span>Signature de la direction (verso de la carte)</span></label>
+          <div class="logo-drop" id="signature-drop" tabindex="0" title="Clique ici puis Ctrl+V pour coller une image, ou clique pour choisir un fichier">
+            <img id="signature-preview" style="display:none;">
+            <div id="signature-placeholder">
+              <p style="margin:0;font-size:13px;font-weight:600;color:var(--ink);">Cliquer pour coller/choisir une signature</p>
+              <p>PNG transparent recommande, fond blanc accepte</p>
+            </div>
+          </div>
+          <input type="file" id="signature-input" accept="image/*">
+          <button class="btn ghost small" id="signature-remove" style="margin-top:8px; display:none;" onclick="removeSignature()">Retirer la signature</button>
+        </div>
+        <div>
+          <label class="field" style="margin-bottom:6px;"><span>Aperçu du bandeau</span></label>
+          <canvas id="preview-header" width="700" height="150" style="width:100%; border-radius:8px; border:1px solid var(--line);"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-panel" id="settings-tab-users">
+      <button class="btn ghost small" onclick="closeSettings()" style="margin-bottom:14px;">← Retour</button>
+      <label class="field" style="margin-bottom:10px;"><span>Comptes utilisateurs</span></label>
+      <div id="users-list" style="margin-bottom:16px;"></div>
+
+      <div style="border-top:1px solid var(--line); padding-top:16px;">
+        <label class="field" style="margin-bottom:10px;"><span>Nouvel utilisateur</span></label>
+        <div class="row">
+          <label class="field"><span>Identifiant</span><input type="text" id="new-user-id" placeholder="ex: rh"></label>
+          <label class="field"><span>Mot de passe</span><input type="text" id="new-user-pw" placeholder="ex: motdepasse123"></label>
+        </div>
+        <label class="field"><span>Role (modèle de permissions)</span>
+          <select id="new-user-role" onchange="applyRolePreset('new-perm', this.value)">
+            <option value="enroleur">Agent enroleur</option>
+            <option value="admin">Admin</option>
+            <option value="comptable">Comptable</option>
+            <option value="personnalise">Personnalise</option>
+          </select>
+        </label>
+        <label class="field" style="margin-bottom:8px;"><span>Fonctionnalites accessibles</span></label>
+        <div class="perm-grid" id="new-perm-grid"></div>
+        <button class="btn primary small" style="margin-top:14px;" onclick="addUser()">+ Ajouter cet utilisateur</button>
+      </div>
+    </div>
+
+    <div class="sub-panel" id="settings-tab-backup">
+      <button class="btn ghost small" onclick="closeSettings()" style="margin-bottom:14px;">← Retour</button>
+      <label class="field" style="margin-bottom:10px;"><span>Sauvegarde et transfert vers un autre ordinateur</span></label>
+      <p class="hint" style="margin-bottom:16px;">Ce logiciel garde ses données sur cet ordinateur uniquement. Pour les retrouver sur une autre machine equipee du même logiciel : exporte un fichier de sauvegarde ici, puis importe-le la-bas.</p>
+
+      <div style="padding:16px; border:1px solid var(--line); border-radius:9px; margin-bottom:16px;">
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">Exporter</div>
+        <p class="hint" style="margin-bottom:10px;">Telecharge un fichier contenant tous les agents, chiens, clients, paramètres, utilisateurs et paramètres de paie.</p>
+        <button class="btn primary small" onclick="exportDatabase()">📤 Exporter la base de données</button>
+      </div>
+
+      <div style="padding:16px; border:1px solid var(--line); border-radius:9px;">
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">Importer</div>
+        <p class="hint" style="margin-bottom:10px;">Selectionne un fichier exporte depuis ce logiciel. <b>Attention : ceci remplace toutes les données actuelles de cet ordinateur.</b></p>
+        <button class="btn ghost small" onclick="document.getElementById('backup-import-input').click()">📥 Importer une base de données</button>
+        <input type="file" id="backup-import-input" accept=".json">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeSettings()">Enregistrer et fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSettings(){
+  document.getElementById('settings-modal').classList.add('open');
+  drawHeaderPreview();
+  renderUsersList();
+}
+function closeSettings(){ readConfig(); persistAll(); document.getElementById('settings-modal').classList.remove('open'); }
+document.querySelectorAll('.sub-tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.sub-tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.subtab).classList.add('active');
+  });
+});
+</script>
+
+<script>
+/* ===================== ETAT GLOBAL ===================== */
+const CARD_W = 1013, CARD_H = 638; // CR80 @300dpi, paysage
+let cfg = {};
+let agents = [];       // {id,matricule,nom,prenom,fonction,service,téléphone,email,dateEmbauche,photoFilename,photoDataURL,typeContrat,dateDebutContrat,dateFinContrat,vaccinAJour,dateRappelVaccin,notes}
+let photoMap = {};      // filename -> dataURL
+let chiens = [];        // {nom,race,agentResponsable,dateNaissance,vaccinAJour,dateRappelVaccin,notes}
+let clients = [];       // {nom,contact,téléphone,email,adresse,typeService,dateDebutContrat,dateFinContrat,notes}
+
+/* ===================== PAIE ===================== */
+// Valeurs de depart uniquement, a vérifier/ajuster par l'utilisateur (voir avertissement dans l'onglet Paie).
+let paieCfg = {
+  smig: 150000, plafond: 1500000,
+  cnssSal: 2.5, cnssPat: 16, cnamgsSal: 2, cnamgsPat: 4.1,
+  conges: 1.5, hsOuvrable: 15, hsDimanche: 40,
+  ancienneteTaux: 2, anciennetePlafond: 25,
+  irppTranches: [{min:0, max:1500000, taux:0}]
+};
+
+/* ===================== ACCES SIMPLE (LOCAL, SANS SERVEUR) ===================== */
+const ALL_PERMISSIONS = ['agents','chiens','clients','alertes','generer','paie','parametres','utilisateurs'];
+const PERMISSION_LABELS = {
+  agents: 'Agents (fiches, photos, badges)',
+  chiens: 'Chiens',
+  clients: 'Clients',
+  alertes: 'Alertes',
+  generer: 'Génération / impression des cartes',
+  paie: 'Paie des employés',
+  parametres: 'Paramètres société (identité, couleurs, logo)',
+  utilisateurs: 'Gestion des utilisateurs'
+};
+const ROLE_LABELS = {
+  enroleur: 'Agent enroleur',
+  admin: 'Admin',
+  comptable: 'Comptable',
+  personnalise: 'Personnalise',
+  superadmin: 'Super admin'
+};
+const ROLE_PRESETS = {
+  enroleur:    {agents:true,  chiens:false, clients:false, alertes:false, generer:true,  paie:false, parametres:false, utilisateurs:false},
+  admin:       {agents:true,  chiens:true,  clients:true,  alertes:true,  generer:true,  paie:true,  parametres:true,  utilisateurs:true},
+  comptable:   {agents:false, chiens:false, clients:true,  alertes:true,  generer:false, paie:true,  parametres:false, utilisateurs:false},
+  personnalise:{agents:false, chiens:false, clients:false, alertes:false, generer:false, paie:false, parametres:false, utilisateurs:false}
+};
+const TAB_PERMISSION_MAP = {
+  'tab-agents':'agents', 'tab-chiens':'chiens', 'tab-clients':'clients',
+  'tab-alertes':'alertes', 'tab-generer':'generer', 'tab-paie':'paie'
+};
+const SUBTAB_PERMISSION_MAP = {
+  'settings-tab-identite':'parametres', 'settings-tab-apparence':'parametres', 'settings-tab-users':'utilisateurs',
+  'settings-tab-backup':'utilisateurs'
+};
+
+function userPermissions(u){
+  if(!u) return {};
+  if(u.role === 'superadmin' || u.role === 'admin') return Object.fromEntries(ALL_PERMISSIONS.map(k=>[k,true]));
+  return u.permissions || {};
+}
+
+let users = [
+  {id:'admin', pw:'admin', role:'admin', permissions:{...ROLE_PRESETS.admin}},
+  {id:'BITOME', pw:'3701', role:'superadmin'}
+];
+let currentUser = null;
+
+function switchLoginTab(tabId, btnEl){
+  document.querySelectorAll('.login-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.login-tab-panel').forEach(p=>p.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+function showLoginError(msg){
+  const el = document.getElementById('login-error');
+  if(!msg){ el.style.display='none'; el.textContent=''; return; }
+  el.style.display = 'block'; el.textContent = msg;
+}
+async function handleLogin(){
+  const id = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  if(!id || !pw){ showLoginError('Renseigne un identifiant et un mot de passe.'); return; }
+  const found = users.find(u=>u.id===id && u.pw===pw);
+  if(!found){ showLoginError('Identifiant ou mot de passe incorrect.'); return; }
+  showLoginError('');
+  currentUser = id;
+  await onAuthenticated();
+}
+function logout(){
+  currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-password').value = '';
+}
+async function onAuthenticated(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('user-pill').textContent = currentUser || '';
+  renderAgentsTable();
+  renderChiensTable();
+  renderClientsTable();
+  renderAlerts();
+  applyPaieSettingsToInputs();
+  renderPaieTable();
+  applyPermissionsToUI();
+}
+function applyPermissionsToUI(){
+  const u = users.find(x=>x.id===currentUser);
+  const perms = userPermissions(u);
+
+  document.querySelectorAll('nav.tabs button[data-tab]').forEach(btn=>{
+    const key = TAB_PERMISSION_MAP[btn.dataset.tab];
+    btn.style.display = (key && !perms[key]) ? 'none' : '';
+  });
+  const activeBtn = document.querySelector('nav.tabs button.active');
+  if(activeBtn && activeBtn.style.display === 'none'){
+    const firstVisible = Array.from(document.querySelectorAll('nav.tabs button[data-tab]')).find(b=>b.style.display !== 'none');
+    if(firstVisible) firstVisible.click();
+  }
+
+  const settingsBtn = document.getElementById('btn-open-settings');
+  if(settingsBtn) settingsBtn.style.display = (perms.parametres || perms.utilisateurs) ? '' : 'none';
+
+  document.querySelectorAll('.sub-tab-btn[data-subtab]').forEach(btn=>{
+    const key = SUBTAB_PERMISSION_MAP[btn.dataset.subtab];
+    btn.style.display = (key && !perms[key]) ? 'none' : '';
+  });
+  const activeSub = document.querySelector('.sub-tab-btn.active');
+  if(activeSub && activeSub.style.display === 'none'){
+    const firstVisibleSub = Array.from(document.querySelectorAll('.sub-tab-btn[data-subtab]')).find(b=>b.style.display !== 'none');
+    if(firstVisibleSub) firstVisibleSub.click();
+  }
+}
+function renderPermGrid(containerId, perms){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = ALL_PERMISSIONS.map(key=>`
+    <label class="perm-item">
+      <input type="checkbox" id="${containerId}-${key}" ${perms[key] ? 'checked' : ''}>
+      ${escapeHtml(PERMISSION_LABELS[key])}
+    </label>`).join('');
+}
+function readPermGrid(containerId){
+  const perms = {};
+  ALL_PERMISSIONS.forEach(key=>{
+    const cb = document.getElementById(`${containerId}-${key}`);
+    perms[key] = cb ? cb.checked : false;
+  });
+  return perms;
+}
+function applyRolePreset(containerId, role){
+  renderPermGrid(containerId, ROLE_PRESETS[role] || {});
+}
+renderPermGrid('new-perm', ROLE_PRESETS.enroleur);
+
+function addUser(){
+  const id = document.getElementById('new-user-id').value.trim();
+  const pw = document.getElementById('new-user-pw').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  if(!id || !pw){ alert('Renseigne un identifiant et un mot de passe.'); return; }
+  if(users.some(u=>u.id===id)){ alert('Cet identifiant existe déjà.'); return; }
+  const permissions = readPermGrid('new-perm');
+  users.push({id, pw, role, permissions});
+  document.getElementById('new-user-id').value = '';
+  document.getElementById('new-user-pw').value = '';
+  document.getElementById('new-user-role').value = 'enroleur';
+  renderPermGrid('new-perm', ROLE_PRESETS.enroleur);
+  renderUsersList();
+  persistAll();
+}
+function removeUser(id){
+  const u = users.find(x=>x.id===id);
+  if(u && u.role==='superadmin'){ alert('Le compte super admin ne peut pas être supprimé.'); return; }
+  if(users.length<=1){ alert('Il doit rester au moins un utilisateur.'); return; }
+  users = users.filter(u=>u.id!==id);
+  renderUsersList();
+  persistAll();
+}
+function changeUserPassword(id){
+  const u = users.find(x=>x.id===id);
+  if(u && u.role==='superadmin'){ alert('Le compte super admin ne peut pas être modifié.'); return; }
+  const pw = prompt(`Nouveau mot de passe pour "${id}" :`);
+  if(!pw) return;
+  if(u){ u.pw = pw; renderUsersList(); persistAll(); alert('Mot de passe mis à jour.'); }
+}
+function togglePermEditor(id){
+  const row = document.getElementById(`perm-editor-${id}`);
+  if(!row) return;
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen){
+    const u = users.find(x=>x.id===id);
+    renderPermGrid(`edit-perm-${id}`, (u && u.permissions) || {});
+  }
+}
+function saveUserPermissions(id){
+  const u = users.find(x=>x.id===id);
+  if(!u || u.role==='superadmin') return;
+  u.permissions = readPermGrid(`edit-perm-${id}`);
+  persistAll();
+  alert('Permissions mises a jour pour "' + id + '".');
+}
+function renderUsersList(){
+  const el = document.getElementById('users-list');
+  if(!el) return;
+  el.innerHTML = users.map(u=>{
+    if(u.role === 'superadmin'){
+      return `<div style="padding:8px 0; border-bottom:1px solid var(--line);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="flex:1; font-size:13px;">${escapeHtml(u.id)} <span class="status-pill ok">Super admin - protégé</span></span>
+        </div>
+      </div>`;
+    }
+    return `<div style="padding:8px 0; border-bottom:1px solid var(--line);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="flex:1; font-size:13px;">${escapeHtml(u.id)} <span class="status-pill ok">${escapeHtml(ROLE_LABELS[u.role] || u.role)}</span>${u.role==='admin' ? ' <span class="hint">(accès complet garanti)</span>' : ''}</span>
+        ${u.role==='admin' ? '' : `<button class="btn ghost small" onclick="togglePermEditor('${escapeHtml(u.id)}')">Permissions</button>`}
+        <button class="btn ghost small" onclick="changeUserPassword('${escapeHtml(u.id)}')">Mot de passe</button>
+        <button class="btn danger small" onclick="removeUser('${escapeHtml(u.id)}')">Suppr.</button>
+      </div>
+      <div id="perm-editor-${escapeHtml(u.id)}" style="display:none; margin-top:10px; padding:10px; background:#fcfcfd; border:1px solid var(--line); border-radius:8px;">
+        <div class="perm-grid" id="edit-perm-${escapeHtml(u.id)}"></div>
+        <button class="btn primary small" style="margin-top:10px;" onclick="saveUserPermissions('${escapeHtml(u.id)}')">Enregistrer les permissions</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ===================== SAUVEGARDE LOCALE ===================== */
+// Sauvegarde automatique sur cet appareil/navigateur. Pour transporter les
+// données vers un autre ordinateur, utilise l'export/import Excel.
+async function persistAll(){
+  const payload = JSON.stringify({agents, cfg, users, chiens, clients, paieCfg});
+  try{
+    if(window.storage){ await window.storage.set('cp_data', payload, false); return; }
+  }catch(e){}
+  try{ localStorage.setItem('cp_data_fallback', payload); }catch(e){}
+}
+function applyLoadedData(data){
+  if(data.agents) agents = data.agents;
+  if(data.cfg) Object.assign(cfg, data.cfg);
+  if(data.users && data.users.length) users = data.users;
+  if(data.chiens) chiens = data.chiens;
+  if(data.clients) clients = data.clients;
+  if(data.paieCfg) Object.assign(paieCfg, data.paieCfg);
+}
+async function restoreAll(){
+  let raw = null;
+  try{
+    if(window.storage){ const r = await window.storage.get('cp_data', false); raw = r ? r.value : null; }
+  }catch(e){}
+  if(!raw){ try{ raw = localStorage.getItem('cp_data_fallback'); }catch(e){} }
+  if(raw){
+    try{ applyLoadedData(JSON.parse(raw)); }catch(e){}
+  }
+  if(!users.some(u=>u.id==='BITOME')) users.push({id:'BITOME', pw:'3701', role:'superadmin'});
+  normalizeUserPermissions();
+}
+function exportDatabase(){
+  const payload = {
+    app: 'FSS-GESTION', exportedAt: new Date().toISOString(),
+    agents, cfg, users, chiens, clients, paieCfg
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fss-gestion-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+document.getElementById('backup-import-input').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let data;
+    try{ data = JSON.parse(reader.result); }
+    catch(err){ alert("Fichier invalide. Assure-toi d'importer un fichier exporte depuis ce logiciel."); return; }
+    if(!data || (!data.agents && !data.cfg && !data.users)){
+      alert("Ce fichier ne semble pas être une sauvegarde valide de ce logiciel.");
+      return;
+    }
+    if(!confirm("Importer cette sauvegarde va REMPLACER toutes les données actuelles sur cet ordinateur (agents, chiens, clients, paramètres, utilisateurs, paie). Continuer ?")) return;
+    applyLoadedData(data);
+    if(!users.some(u=>u.id==='BITOME')) users.push({id:'BITOME', pw:'3701', role:'superadmin'});
+    normalizeUserPermissions();
+    persistAll();
+    applyConfigToInputs();
+    applyPaieSettingsToInputs();
+    renderAgentsTable();
+    renderChiensTable();
+    renderClientsTable();
+    renderAlerts();
+    if(document.getElementById('paie-table-wrap')) renderPaieTable();
+    renderUsersList();
+    alert('Base de données importée avec succès.');
+  };
+  reader.readAsText(f);
+  e.target.value = '';
+});
+function normalizeUserPermissions(){
+  let changed = false;
+  users.forEach(u=>{
+    if(u.role === 'superadmin') return;
+    const preset = ROLE_PRESETS[u.role] || {};
+    const perms = u.permissions || {};
+    ALL_PERMISSIONS.forEach(k=>{
+      if(perms[k] === undefined){ perms[k] = !!preset[k]; changed = true; }
+    });
+    u.permissions = perms;
+  });
+  if(changed) persistAll();
+}
+/* ===================== ACTIVATION DU LOGICIEL ===================== */
+const ACTIVATION_CODE = "BITOME3701";
+
+async function isActivated(){
+  try{
+    if(window.storage){ const r = await window.storage.get('cp_activated', false); return r && r.value === 'true'; }
+  }catch(e){}
+  try{ return localStorage.getItem('cp_activated_fallback') === 'true'; }catch(e){ return false; }
+}
+async function saveActivation(){
+  try{
+    if(window.storage){ await window.storage.set('cp_activated', 'true', false); return; }
+  }catch(e){}
+  try{ localStorage.setItem('cp_activated_fallback', 'true'); }catch(e){}
+}
+function showActivationError(msg){
+  const el = document.getElementById('activation-error');
+  if(!msg){ el.style.display='none'; el.textContent=''; return; }
+  el.style.display = 'block'; el.textContent = msg;
+}
+async function handleActivation(){
+  const code = document.getElementById('activation-code-input').value.trim();
+  if(!code){ showActivationError("Renseigne le code d'activation."); return; }
+  if(code.toUpperCase() === ACTIVATION_CODE.toUpperCase()){
+    await saveActivation();
+    document.getElementById('activation-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  } else {
+    showActivationError("Code d'activation incorrect.");
+  }
+}
+
+async function bootstrapAuth(){
+  const activated = await isActivated();
+  if(activated){
+    document.getElementById('activation-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+  await restoreAll();
+  if(cfg && cfg.name) applyConfigToInputs();
+}
+function applyConfigToInputs(){
+  document.getElementById('cfg-name').value = cfg.name || '';
+  document.getElementById('cfg-slogan').value = cfg.slogan || '';
+  document.getElementById('cfg-address').value = cfg.address || '';
+  document.getElementById('cfg-rccm').value = cfg.rccm || '';
+  document.getElementById('cfg-nif').value = cfg.nif || '';
+  document.getElementById('cfg-phone').value = cfg.phone || '';
+  document.getElementById('cfg-web').value = cfg.web || '';
+  document.getElementById('cfg-backnote').value = cfg.backnote || '';
+  document.getElementById('cfg-primary').value = normalizeHex(cfg.primary || '#1F4E78');
+  document.getElementById('cfg-secondary').value = normalizeHex(cfg.secondary || '#FFFFFF');
+  document.getElementById('cfg-text').value = normalizeHex(cfg.textOnPrimary || '#FFFFFF');
+  if(cfg.logoDataURL){
+    document.getElementById('logo-preview').src = cfg.logoDataURL;
+    document.getElementById('logo-preview').style.display = 'inline-block';
+    document.getElementById('logo-placeholder').style.display = 'none';
+  }
+  if(cfg.signatureDataURL){
+    document.getElementById('signature-preview').src = cfg.signatureDataURL;
+    document.getElementById('signature-preview').style.display = 'inline-block';
+    document.getElementById('signature-placeholder').style.display = 'none';
+    document.getElementById('signature-remove').style.display = 'inline-block';
+  }
+  drawHeaderPreview();
+  updateWatermark();
+}
+function updateWatermark(){
+  const img = document.getElementById('bg-watermark-img');
+  if(cfg.logoDataURL){ img.src = cfg.logoDataURL; img.style.display = 'block'; }
+  else { img.style.display = 'none'; }
+}
+
+/* ===================== NAVIGATION ===================== */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'tab-alertes') renderAlerts();
+  });
+});
+function goToTab(tabId){
+  const btn = document.querySelector(`nav.tabs button[data-tab="${tabId}"]`);
+  if(btn) btn.click();
+}
+
+/* ===================== CONFIG SOCIÉTÉ ===================== */
+function readConfig(){
+  cfg.name = document.getElementById('cfg-name').value || 'SOCIÉTÉ';
+  cfg.slogan = document.getElementById('cfg-slogan').value || '';
+  cfg.phone = document.getElementById('cfg-phone').value || '';
+  cfg.web = document.getElementById('cfg-web').value || '';
+  cfg.address = document.getElementById('cfg-address').value || '';
+  cfg.rccm = document.getElementById('cfg-rccm').value || '';
+  cfg.nif = document.getElementById('cfg-nif').value || '';
+  cfg.backnote = document.getElementById('cfg-backnote').value || '';
+  cfg.primary = document.getElementById('cfg-primary').value || '#1F4E78';
+  cfg.secondary = document.getElementById('cfg-secondary').value || '#FFFFFF';
+  cfg.textOnPrimary = document.getElementById('cfg-text').value || '#FFFFFF';
+  cfg.logoDataURL = cfg.logoDataURL || null;
+}
+['cfg-name','cfg-slogan','cfg-phone','cfg-web','cfg-address','cfg-rccm','cfg-nif','cfg-backnote','cfg-primary','cfg-secondary','cfg-text']
+  .forEach(id=>document.getElementById(id).addEventListener('input', ()=>{readConfig(); drawHeaderPreview();}));
+
+document.getElementById('logo-drop').addEventListener('click', ()=>document.getElementById('logo-input').click());
+document.getElementById('logo-input').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    cfg.logoDataURL = reader.result;
+    document.getElementById('logo-preview').src = reader.result;
+    document.getElementById('logo-preview').style.display = 'inline-block';
+    document.getElementById('logo-placeholder').style.display = 'none';
+    drawHeaderPreview();
+    updateWatermark();
+  };
+  reader.readAsDataURL(f);
+});
+
+function setSignature(dataURL){
+  cfg.signatureDataURL = dataURL;
+  document.getElementById('signature-preview').src = dataURL;
+  document.getElementById('signature-preview').style.display = 'inline-block';
+  document.getElementById('signature-placeholder').style.display = 'none';
+  document.getElementById('signature-remove').style.display = 'inline-block';
+  persistAll();
+}
+function removeSignature(){
+  cfg.signatureDataURL = null;
+  document.getElementById('signature-preview').style.display = 'none';
+  document.getElementById('signature-placeholder').style.display = 'block';
+  document.getElementById('signature-remove').style.display = 'none';
+  persistAll();
+}
+document.getElementById('signature-drop').addEventListener('click', ()=>document.getElementById('signature-input').click());
+document.getElementById('signature-input').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=> setSignature(reader.result);
+  reader.readAsDataURL(f);
+});
+document.getElementById('signature-drop').addEventListener('paste', e=>{
+  const items = (e.clipboardData || window.clipboardData).items || [];
+  for(const item of items){
+    if(item.type && item.type.startsWith('image/')){
+      const file = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = ()=> setSignature(reader.result);
+      reader.readAsDataURL(file);
+      e.preventDefault();
+      break;
+    }
+  }
+});
+
+function drawHeaderPreview(){
+  readConfig();
+  const c = document.getElementById('preview-header');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle = cfg.primary;
+  ctx.fillRect(0,0,c.width,c.height);
+  let x = 22;
+  if(cfg.logoDataURL){
+    const img = new Image();
+    img.onload = ()=>{
+      const h = c.height*0.55, ratio = h/img.height, w = img.width*ratio;
+      ctx.drawImage(img, x, (c.height-h)/2, w, h);
+      drawHeaderText(ctx, c, x+w+18);
+    };
+    img.src = cfg.logoDataURL;
+  } else {
+    drawHeaderText(ctx, c, x);
+  }
+}
+function drawHeaderText(ctx, c, x){
+  ctx.fillStyle = cfg.textOnPrimary;
+  ctx.font = '700 30px -apple-system, sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(cfg.name, x, c.height*0.48);
+  if(cfg.slogan){
+    ctx.font = '400 14px -apple-system, sans-serif';
+    ctx.fillText(cfg.slogan, x, c.height*0.48+22);
+  }
+}
+readConfig();
+drawHeaderPreview();
+
+/* ===================== IMPORT EXCEL ===================== */
+document.getElementById('excel-input').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const wb = XLSX.read(ev.target.result, {type:'array'});
+
+    if(wb.SheetNames.includes('Paramètres')){
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets['Paramètres'], {header:1});
+      const map = {};
+      rows.slice(1).forEach(r=>{ if(r[0]) map[String(r[0]).trim()] = r[1]!==undefined? String(r[1]) : ''; });
+      if(map.Nom_Societe) document.getElementById('cfg-name').value = map.Nom_Societe;
+      if(map.Slogan) document.getElementById('cfg-slogan').value = map.Slogan;
+      if(map.Adresse) document.getElementById('cfg-address').value = map.Adresse;
+      if(map.Telephone_Societe) document.getElementById('cfg-phone').value = map.Telephone_Societe;
+      if(map.Site_Web) document.getElementById('cfg-web').value = map.Site_Web;
+      if(map.Couleur_Primaire) document.getElementById('cfg-primary').value = normalizeHex(map.Couleur_Primaire);
+      if(map.Couleur_Secondaire) document.getElementById('cfg-secondary').value = normalizeHex(map.Couleur_Secondaire);
+      if(map.Couleur_Texte) document.getElementById('cfg-text').value = normalizeHex(map.Couleur_Texte);
+      if(map.Logo_Fichier) cfg.pendingLogoFilename = map.Logo_Fichier;
+      readConfig(); drawHeaderPreview();
+    }
+
+    const sheetName = wb.SheetNames.includes('Agents') ? 'Agents' : wb.SheetNames[0];
+    const json = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:''});
+    const newAgents = json.map(r=>({
+      id: null,
+      matricule: String(r.Matricule||'').trim(),
+      nom: String(r.Nom||'').trim(),
+      prenom: String(r.Prenom||'').trim(),
+      fonction: String(r.Fonction||'').trim(),
+      service: String(r.Service||'').trim(),
+      telephone: String(r.Téléphone||'').trim(),
+      email: String(r.Email||'').trim(),
+      dateEmbauche: String(r.Date_Embauche||'').trim(),
+      photoFilename: String(r.Nom_Fichier_Photo||'').trim(),
+      photoDataURL: null,
+      typeContrat: String(r.Type_Contrat||'CDI').trim(),
+      dateDebutContrat: normalizeDate(r.Date_Debut_Contrat),
+      dateFinContrat: normalizeDate(r.Date_Fin_Contrat),
+      vaccinAJour: /^(oui|yes|true|1)$/i.test(String(r.Vaccin_A_Jour||'')),
+      dateRappelVaccin: normalizeDate(r.Date_Rappel_Vaccin),
+      notes: String(r.Notes||'').trim()
+    }));
+    agents.push(...newAgents);
+    newAgents.forEach(a=>{ if(!a.matricule) a.matricule = nextMatricule(); });
+    applyPhotoMap();
+    renderAgentsTable();
+    renderAlerts();
+    persistAll();
+  };
+  reader.readAsArrayBuffer(f);
+  e.target.value = '';
+});
+function normalizeDate(v){
+  if(!v) return '';
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  const s = String(v).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
+  return '';
+}
+
+function normalizeHex(h){
+  h = String(h).trim().replace('#','');
+  return /^[0-9a-fA-F]{6}$/.test(h) ? '#'+h : '#1F4E78';
+}
+
+/* ===================== IMPORT PHOTOS (VRAC) ===================== */
+document.getElementById('photos-input').addEventListener('change', e=>{
+  const files = Array.from(e.target.files);
+  let remaining = files.length;
+  if(!remaining) return;
+  files.forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      photoMap[f.name] = reader.result;
+      remaining--;
+      if(remaining===0){
+        applyPhotoMap();
+        renderAgentsTable();
+        if(cfg.pendingLogoFilename && photoMap[cfg.pendingLogoFilename]){
+          cfg.logoDataURL = photoMap[cfg.pendingLogoFilename];
+          document.getElementById('logo-preview').src = cfg.logoDataURL;
+          document.getElementById('logo-preview').style.display = 'inline-block';
+          document.getElementById('logo-placeholder').style.display = 'none';
+          drawHeaderPreview();
+          updateWatermark();
+        }
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+});
+function applyPhotoMap(){
+  agents.forEach(a=>{
+    if(a.photoFilename && photoMap[a.photoFilename]) a.photoDataURL = photoMap[a.photoFilename];
+  });
+}
+
+/* ===================== TABLE AGENTS ===================== */
+function blankAgent(){
+  return {id:null, matricule:'',nom:'',prenom:'',fonction:'',service:'',telephone:'',email:'',dateEmbauche:'',
+    photoFilename:'',photoDataURL:null, typeContrat:'CDI', dateDebutContrat:'', dateFinContrat:'',
+    vaccinAJour:false, dateRappelVaccin:'', notes:'',
+    salaireBase:0, primeTransport:0, primeLogement:0};
+}
+function nextMatricule(){
+  let maxNum = 0;
+  agents.forEach(a=>{
+    const m = String(a.matricule||'').match(/(\d+)\s*$/);
+    if(m) maxNum = Math.max(maxNum, parseInt(m[1],10));
+  });
+  return 'AG' + String(maxNum+1).padStart(3,'0');
+}
+function addAgentRow(){
+  const a = blankAgent();
+  a.matricule = nextMatricule();
+  agents.push(a);
+  renderAgentsTable();
+  persistAll();
+}
+
+/* ===================== FORMULAIRE AGENT (A4) ===================== */
+let agentFormIndex = null; // null = nouvel agent
+let agentFormPhotoDataURL = null;
+
+function openAgentForm(index){
+  agentFormIndex = index;
+  const a = (index === null) ? blankAgent() : agents[index];
+  if(index === null) a.matricule = nextMatricule();
+
+  document.getElementById('agent-form-title').textContent = index === null ? 'Nouvel agent' : 'Modifier un agent';
+  document.getElementById('af-matricule').value = a.matricule || '';
+  document.getElementById('af-dateembauche').value = a.dateEmbauche || '';
+  document.getElementById('af-nom').value = a.nom || '';
+  document.getElementById('af-prenom').value = a.prenom || '';
+  document.getElementById('af-fonction').value = a.fonction || '';
+  document.getElementById('af-service').value = a.service || '';
+  document.getElementById('af-telephone').value = a.telephone || '';
+  document.getElementById('af-email').value = a.email || '';
+  document.getElementById('af-typecontrat').value = a.typeContrat || 'CDI';
+  document.getElementById('af-datedebut').value = a.dateDebutContrat || '';
+  document.getElementById('af-datefin').value = a.dateFinContrat || '';
+  document.getElementById('af-salaire').value = a.salaireBase || 0;
+  document.getElementById('af-primetransport').value = a.primeTransport || 0;
+  document.getElementById('af-primelogement').value = a.primeLogement || 0;
+  document.getElementById('af-vaccin').value = a.vaccinAJour ? 'true' : 'false';
+  document.getElementById('af-daterappel').value = a.dateRappelVaccin || '';
+  document.getElementById('af-notes').value = a.notes || '';
+
+  agentFormPhotoDataURL = a.photoDataURL || null;
+  updateAgentFormPhotoPreview();
+
+  document.getElementById('agent-form-modal').classList.add('open');
+}
+function closeAgentForm(){
+  document.getElementById('agent-form-modal').classList.remove('open');
+}
+function updateAgentFormPhotoPreview(){
+  const img = document.getElementById('af-photo-preview');
+  const placeholder = document.getElementById('af-photo-placeholder');
+  if(agentFormPhotoDataURL){
+    img.src = agentFormPhotoDataURL; img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'block';
+  }
+}
+document.getElementById('af-photo-input').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ agentFormPhotoDataURL = reader.result; updateAgentFormPhotoPreview(); };
+  reader.readAsDataURL(f);
+});
+function saveAgentForm(){
+  const a = (agentFormIndex === null) ? blankAgent() : agents[agentFormIndex];
+  a.matricule = document.getElementById('af-matricule').value.trim();
+  a.dateEmbauche = document.getElementById('af-dateembauche').value;
+  a.nom = document.getElementById('af-nom').value.trim();
+  a.prenom = document.getElementById('af-prenom').value.trim();
+  a.fonction = document.getElementById('af-fonction').value.trim();
+  a.service = document.getElementById('af-service').value.trim();
+  a.telephone = document.getElementById('af-telephone').value.trim();
+  a.email = document.getElementById('af-email').value.trim();
+  a.typeContrat = document.getElementById('af-typecontrat').value;
+  a.dateDebutContrat = document.getElementById('af-datedebut').value;
+  a.dateFinContrat = document.getElementById('af-datefin').value;
+  a.salaireBase = num(document.getElementById('af-salaire').value);
+  a.primeTransport = num(document.getElementById('af-primetransport').value);
+  a.primeLogement = num(document.getElementById('af-primelogement').value);
+  a.vaccinAJour = document.getElementById('af-vaccin').value === 'true';
+  a.dateRappelVaccin = document.getElementById('af-daterappel').value;
+  a.notes = document.getElementById('af-notes').value.trim();
+  a.photoDataURL = agentFormPhotoDataURL;
+
+  if(agentFormIndex === null){
+    agents.push(a);
+  }
+  closeAgentForm();
+  renderAgentsTable();
+  renderAlerts();
+  if(document.getElementById('paie-table-wrap')) renderPaieTable();
+  persistAll();
+}
+function removeAgent(i){
+  agents.splice(i,1);
+  renderAgentsTable();
+  renderAlerts();
+  persistAll();
+}
+function updateAgentField(i, field, value){
+  const a = agents[i];
+  if(field==='vaccinAJour') value = (value === 'true' || value === true);
+  a[field] = value;
+  if(field==='photoFilename' && photoMap[value]) a.photoDataURL = photoMap[value];
+  renderAlerts();
+  persistAll();
+}
+function updateAgentSalaireField(i, value){
+  agents[i].salaireBase = num(value);
+  persistAll();
+  if(document.getElementById('paie-table-wrap')) renderPaieTable();
+}
+
+function renderAgentsTable(){
+  const wrap = document.getElementById('agents-table-wrap');
+  document.getElementById('agents-counter').innerHTML = `<b>${agents.length}</b> agent(s)`;
+  const withPhoto = agents.filter(a=>a.photoDataURL).length;
+  document.getElementById('photos-counter').innerHTML = `<b>${withPhoto}</b> photo(s) associée(s)`;
+
+  if(!agents.length){
+    wrap.innerHTML = '<div class="empty-state">Aucun agent pour l\'instant. Importe un fichier Excel ou ajoute un agent manuellement.</div>';
+    return;
+  }
+  const contratOptions = ['CDI','CDD','Stage','Interim','Autre'];
+  let html = `<div class="table-scroll"><table class="agents"><thead><tr>
+    <th>Photo</th><th>Matricule</th><th>Nom</th><th>Prenom</th><th>Fonction</th><th>Salaire mensuel</th><th>Service</th>
+    <th>Téléphone</th><th>Email</th><th>Fichier photo</th><th>Type contrat</th><th>Debut contrat</th><th>Fin contrat</th>
+    <th>Vaccin a jour</th><th>Rappel vaccin</th><th>Statut</th><th></th><th></th><th></th><th></th>
+  </tr></thead><tbody>`;
+  agents.forEach((a,i)=>{
+    const thumb = a.photoDataURL ? `<img class="photo-thumb" src="${a.photoDataURL}">` : `<div class="photo-thumb"></div>`;
+    const pill = a.photoDataURL ? `<span class="status-pill ok">OK</span>` : `<span class="status-pill missing">Manquante</span>`;
+    const contratOpts = contratOptions.map(o=>`<option value="${o}" ${a.typeContrat===o?'selected':''}>${o}</option>`).join('');
+    html += `<tr data-agent-index="${i}">
+      <td>${thumb}</td>
+      <td><input value="${escapeHtml(a.matricule)}" onchange="updateAgentField(${i},'matricule',this.value)"></td>
+      <td><input value="${escapeHtml(a.nom)}" onchange="updateAgentField(${i},'nom',this.value)"></td>
+      <td><input value="${escapeHtml(a.prenom)}" onchange="updateAgentField(${i},'prenom',this.value)"></td>
+      <td><input value="${escapeHtml(a.fonction)}" onchange="updateAgentField(${i},'fonction',this.value)"></td>
+      <td><input type="text" value="${a.salaireBase||0}" title="Salaire de base mensuel en FCFA" onchange="updateAgentSalaireField(${i},this.value)"></td>
+      <td><input value="${escapeHtml(a.service)}" onchange="updateAgentField(${i},'service',this.value)"></td>
+      <td><input value="${escapeHtml(a.telephone)}" onchange="updateAgentField(${i},'telephone',this.value)"></td>
+      <td><input value="${escapeHtml(a.email)}" onchange="updateAgentField(${i},'email',this.value)"></td>
+      <td><input value="${escapeHtml(a.photoFilename)}" onchange="updateAgentField(${i},'photoFilename',this.value)"></td>
+      <td><select onchange="updateAgentField(${i},'typeContrat',this.value)">${contratOpts}</select></td>
+      <td><input type="date" value="${escapeHtml(a.dateDebutContrat)}" onchange="updateAgentField(${i},'dateDebutContrat',this.value)"></td>
+      <td><input type="date" value="${escapeHtml(a.dateFinContrat)}" onchange="updateAgentField(${i},'dateFinContrat',this.value)"></td>
+      <td><select onchange="updateAgentField(${i},'vaccinAJour',this.value)">
+            <option value="true" ${a.vaccinAJour?'selected':''}>Oui</option>
+            <option value="false" ${!a.vaccinAJour?'selected':''}>Non</option>
+          </select></td>
+      <td><input type="date" value="${escapeHtml(a.dateRappelVaccin)}" onchange="updateAgentField(${i},'dateRappelVaccin',this.value)"></td>
+      <td>${pill}</td>
+      <td><button class="btn ghost small" onclick="openAgentForm(${i})">Modifier</button></td>
+      <td><button class="btn ghost small" onclick="openCamera(${i})">📷 Prendre</button></td>
+      <td><button class="btn ghost small" id="print-agent-${i}" onclick="printSingleAgent(${i})" title="Imprimer recto/verso">🖨</button></td>
+      <td><button class="btn danger small" onclick="removeAgent(${i})">Suppr.</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ===================== TABLE CHIENS ===================== */
+function blankChien(){
+  return {nom:'', race:'', agentResponsable:'', dateNaissance:'', vaccinAJour:false, dateRappelVaccin:'', notes:''};
+}
+function addChienRow(){ chiens.push(blankChien()); renderChiensTable(); persistAll(); }
+function removeChien(i){ chiens.splice(i,1); renderChiensTable(); renderAlerts(); persistAll(); }
+function updateChienField(i, field, value){
+  if(field==='vaccinAJour') value = (value === 'true' || value === true);
+  chiens[i][field] = value;
+  renderAlerts();
+  persistAll();
+}
+function renderChiensTable(){
+  const wrap = document.getElementById('chiens-table-wrap');
+  document.getElementById('chiens-counter').innerHTML = `<b>${chiens.length}</b> chien(s)`;
+  if(!chiens.length){
+    wrap.innerHTML = '<div class="empty-state">Aucun chien pour l\'instant.</div>';
+    return;
+  }
+  let html = `<div class="table-scroll"><table class="agents"><thead><tr>
+    <th>Nom</th><th>Race</th><th>Agent responsable</th><th>Date de naissance</th>
+    <th>Vaccin a jour</th><th>Rappel vaccin</th><th>Notes</th><th></th>
+  </tr></thead><tbody>`;
+  chiens.forEach((c,i)=>{
+    html += `<tr data-chien-index="${i}">
+      <td><input value="${escapeHtml(c.nom)}" onchange="updateChienField(${i},'nom',this.value)"></td>
+      <td><input value="${escapeHtml(c.race)}" onchange="updateChienField(${i},'race',this.value)"></td>
+      <td><input value="${escapeHtml(c.agentResponsable)}" onchange="updateChienField(${i},'agentResponsable',this.value)"></td>
+      <td><input type="date" value="${escapeHtml(c.dateNaissance)}" onchange="updateChienField(${i},'dateNaissance',this.value)"></td>
+      <td><select onchange="updateChienField(${i},'vaccinAJour',this.value)">
+            <option value="true" ${c.vaccinAJour?'selected':''}>Oui</option>
+            <option value="false" ${!c.vaccinAJour?'selected':''}>Non</option>
+          </select></td>
+      <td><input type="date" value="${escapeHtml(c.dateRappelVaccin)}" onchange="updateChienField(${i},'dateRappelVaccin',this.value)"></td>
+      <td><input value="${escapeHtml(c.notes)}" onchange="updateChienField(${i},'notes',this.value)"></td>
+      <td><button class="btn danger small" onclick="removeChien(${i})">Suppr.</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+/* ===================== TABLE CLIENTS ===================== */
+function blankClient(){
+  return {nom:'', contact:'', telephone:'', email:'', adresse:'', typeService:'', dateDebutContrat:'', dateFinContrat:'', notes:''};
+}
+function addClientRow(){ clients.push(blankClient()); renderClientsTable(); persistAll(); }
+function removeClient(i){ clients.splice(i,1); renderClientsTable(); renderAlerts(); persistAll(); }
+function updateClientField(i, field, value){
+  clients[i][field] = value;
+  renderAlerts();
+  persistAll();
+}
+function renderClientsTable(){
+  const wrap = document.getElementById('clients-table-wrap');
+  document.getElementById('clients-counter').innerHTML = `<b>${clients.length}</b> client(s)`;
+  if(!clients.length){
+    wrap.innerHTML = '<div class="empty-state">Aucun client pour l\'instant.</div>';
+    return;
+  }
+  let html = `<div class="table-scroll"><table class="agents"><thead><tr>
+    <th>Nom / entreprise</th><th>Contact</th><th>Téléphone</th><th>Email</th><th>Adresse</th>
+    <th>Type de service</th><th>Fin de contrat</th><th>Notes</th><th></th>
+  </tr></thead><tbody>`;
+  clients.forEach((c,i)=>{
+    html += `<tr data-client-index="${i}">
+      <td><input value="${escapeHtml(c.nom)}" onchange="updateClientField(${i},'nom',this.value)"></td>
+      <td><input value="${escapeHtml(c.contact)}" onchange="updateClientField(${i},'contact',this.value)"></td>
+      <td><input value="${escapeHtml(c.telephone)}" onchange="updateClientField(${i},'telephone',this.value)"></td>
+      <td><input value="${escapeHtml(c.email)}" onchange="updateClientField(${i},'email',this.value)"></td>
+      <td><input value="${escapeHtml(c.adresse)}" onchange="updateClientField(${i},'adresse',this.value)"></td>
+      <td><input value="${escapeHtml(c.typeService)}" onchange="updateClientField(${i},'typeService',this.value)"></td>
+      <td><input type="date" value="${escapeHtml(c.dateFinContrat)}" onchange="updateClientField(${i},'dateFinContrat',this.value)"></td>
+      <td><input value="${escapeHtml(c.notes)}" onchange="updateClientField(${i},'notes',this.value)"></td>
+      <td><button class="btn danger small" onclick="removeClient(${i})">Suppr.</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+/* ===================== CALCULS DE PAIE ===================== */
+function fmtFcfa(n){
+  return Math.round(n||0).toLocaleString('fr-FR') + ' FCFA';
+}
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+function computeIrpp(base, tranches){
+  if(base <= 0 || !tranches || !tranches.length) return 0;
+  const sorted = [...tranches].sort((a,b)=>a.min-b.min);
+  let tax = 0;
+  for(const t of sorted){
+    if(base <= t.min) continue;
+    const top = (t.max === null || t.max === undefined || t.max === '') ? base : Math.min(base, t.max);
+    const taxable = Math.max(0, top - t.min);
+    tax += taxable * (num(t.taux)/100);
+  }
+  return tax;
+}
+function seniorityYears(dateEmbauche){
+  if(!dateEmbauche) return 0;
+  const d = new Date(dateEmbauche+'T00:00:00');
+  if(isNaN(d)) return 0;
+  const years = (Date.now() - d.getTime()) / (365.25*86400000);
+  return Math.max(0, Math.floor(years));
+}
+function calcPaie(agent){
+  const base = num(agent.salaireBase) || 0;
+  const years = seniorityYears(agent.dateEmbauche);
+  const anciennetePct = Math.min(years * num(paieCfg.ancienneteTaux), num(paieCfg.anciennetePlafond));
+  const primeAnciennete = base * anciennetePct/100;
+  const primeTransport = num(agent.primeTransport) || 0;
+  const primeLogement = num(agent.primeLogement) || 0;
+  const brut = base + primeTransport + primeLogement + primeAnciennete;
+
+  const baseCotisable = Math.min(brut, num(paieCfg.plafond) || brut);
+  const cnssSal = baseCotisable * num(paieCfg.cnssSal)/100;
+  const cnamgsSal = baseCotisable * num(paieCfg.cnamgsSal)/100;
+  const cnssPat = baseCotisable * num(paieCfg.cnssPat)/100;
+  const cnamgsPat = baseCotisable * num(paieCfg.cnamgsPat)/100;
+
+  const netImposable = Math.max(0, brut - cnssSal - cnamgsSal);
+  const irpp = computeIrpp(netImposable, paieCfg.irppTranches);
+  const net = Math.max(0, netImposable - irpp);
+  const coutEmployeur = brut + cnssPat + cnamgsPat;
+  const congesAcquis = years >= 0 ? (num(paieCfg.conges) * 12) : 0;
+
+  return {base, primeAnciennete, anciennetePct, primeTransport, primeLogement, brut,
+    cnssSal, cnamgsSal, cnssPat, cnamgsPat, netImposable, irpp, net, coutEmployeur, congesAcquis, years};
+}
+
+/* ===================== PARAMÈTRES DE PAIE (UI) ===================== */
+function applyPaieSettingsToInputs(){
+  document.getElementById('paie-smig').value = paieCfg.smig;
+  document.getElementById('paie-plafond').value = paieCfg.plafond;
+  document.getElementById('paie-cnss-sal').value = paieCfg.cnssSal;
+  document.getElementById('paie-cnss-pat').value = paieCfg.cnssPat;
+  document.getElementById('paie-cnamgs-sal').value = paieCfg.cnamgsSal;
+  document.getElementById('paie-cnamgs-pat').value = paieCfg.cnamgsPat;
+  document.getElementById('paie-conges').value = paieCfg.conges;
+  document.getElementById('paie-hs-ouvrable').value = paieCfg.hsOuvrable;
+  document.getElementById('paie-hs-dimanche').value = paieCfg.hsDimanche;
+  document.getElementById('paie-anciennete-taux').value = paieCfg.ancienneteTaux;
+  document.getElementById('paie-anciennete-plafond').value = paieCfg.anciennetePlafond;
+  renderIrppTranches();
+}
+function renderIrppTranches(){
+  const wrap = document.getElementById('irpp-tranches-wrap');
+  if(!wrap) return;
+  wrap.innerHTML = paieCfg.irppTranches.map((t,i)=>`
+    <div class="row" style="align-items:flex-end;">
+      <label class="field"><span>De (FCFA)</span><input type="text" id="irpp-min-${i}" value="${t.min}"></label>
+      <label class="field"><span>A (FCFA, vide = sans limite)</span><input type="text" id="irpp-max-${i}" value="${t.max===null||t.max===undefined?'':t.max}"></label>
+      <label class="field"><span>Taux (%)</span><input type="text" id="irpp-taux-${i}" value="${t.taux}"></label>
+      <button class="btn danger small" style="margin-bottom:14px;" onclick="removeIrppTranche(${i})">Suppr.</button>
+    </div>`).join('');
+}
+function addIrppTranche(){
+  readIrppTranchesFromInputs();
+  paieCfg.irppTranches.push({min:0, max:null, taux:0});
+  renderIrppTranches();
+}
+function removeIrppTranche(i){
+  readIrppTranchesFromInputs();
+  paieCfg.irppTranches.splice(i,1);
+  renderIrppTranches();
+}
+function readIrppTranchesFromInputs(){
+  const rows = document.querySelectorAll('#irpp-tranches-wrap .row');
+  const tranches = [];
+  rows.forEach((row,i)=>{
+    const min = document.getElementById(`irpp-min-${i}`);
+    const max = document.getElementById(`irpp-max-${i}`);
+    const taux = document.getElementById(`irpp-taux-${i}`);
+    if(!min) return;
+    tranches.push({
+      min: num(min.value),
+      max: max.value.trim()==='' ? null : num(max.value),
+      taux: num(taux.value)
+    });
+  });
+  if(tranches.length) paieCfg.irppTranches = tranches;
+}
+function savePaieSettings(){
+  readIrppTranchesFromInputs();
+  paieCfg.smig = num(document.getElementById('paie-smig').value);
+  paieCfg.plafond = num(document.getElementById('paie-plafond').value);
+  paieCfg.cnssSal = num(document.getElementById('paie-cnss-sal').value);
+  paieCfg.cnssPat = num(document.getElementById('paie-cnss-pat').value);
+  paieCfg.cnamgsSal = num(document.getElementById('paie-cnamgs-sal').value);
+  paieCfg.cnamgsPat = num(document.getElementById('paie-cnamgs-pat').value);
+  paieCfg.conges = num(document.getElementById('paie-conges').value);
+  paieCfg.hsOuvrable = num(document.getElementById('paie-hs-ouvrable').value);
+  paieCfg.hsDimanche = num(document.getElementById('paie-hs-dimanche').value);
+  paieCfg.ancienneteTaux = num(document.getElementById('paie-anciennete-taux').value);
+  paieCfg.anciennetePlafond = num(document.getElementById('paie-anciennete-plafond').value);
+  persistAll();
+  renderPaieTable();
+  alert('Paramètres de paie enregistrés.');
+}
+
+/* ===================== TABLE DE PAIE ===================== */
+function updateAgentPaieField(i, field, value){
+  agents[i][field] = num(value);
+  persistAll();
+  renderPaieTable();
+}
+function renderPaieTable(){
+  const wrap = document.getElementById('paie-table-wrap');
+  if(!wrap) return;
+  if(!agents.length){
+    wrap.innerHTML = '<div class="empty-state">Aucun agent. Ajoute des agents dans l\'onglet Agents pour calculer leur paie.</div>';
+    return;
+  }
+  let html = `<div class="table-scroll"><table class="agents"><thead><tr>
+    <th>Agent</th><th>Salaire de base</th><th>Prime transport</th><th>Prime logement</th>
+    <th>Ancienneté</th><th>Brut</th><th>CNSS+CNAMGS sal.</th><th>IRPP</th><th>Net a payer</th>
+    <th>Cout employeur</th><th></th>
+  </tr></thead><tbody>`;
+  agents.forEach((a,i)=>{
+    const p = calcPaie(a);
+    const label = `${a.prenom} ${a.nom}`.trim() || a.matricule || `Agent ${i+1}`;
+    html += `<tr>
+      <td>${escapeHtml(label)}</td>
+      <td><input type="text" value="${a.salaireBase||0}" onchange="updateAgentPaieField(${i},'salaireBase',this.value)"></td>
+      <td><input type="text" value="${a.primeTransport||0}" onchange="updateAgentPaieField(${i},'primeTransport',this.value)"></td>
+      <td><input type="text" value="${a.primeLogement||0}" onchange="updateAgentPaieField(${i},'primeLogement',this.value)"></td>
+      <td>${fmtFcfa(p.primeAnciennete)} <span class="hint">(${p.anciennetePct.toFixed(1)}%, ${p.years} an(s))</span></td>
+      <td>${fmtFcfa(p.brut)}</td>
+      <td>${fmtFcfa(p.cnssSal + p.cnamgsSal)}</td>
+      <td>${fmtFcfa(p.irpp)}</td>
+      <td><b>${fmtFcfa(p.net)}</b></td>
+      <td>${fmtFcfa(p.coutEmployeur)}</td>
+      <td><button class="btn ghost small" onclick="printPayslip(${i})">🖨 Bulletin</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+/* ===================== IMPRESSION PAIE ===================== */
+function payslipHtml(agent, p){
+  const label = `${agent.prenom} ${agent.nom}`.trim() || agent.matricule || 'Agent';
+  const now = new Date();
+  const période = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const watermark = cfg.logoDataURL ? `
+    <img src="${cfg.logoDataURL}" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:60%; max-width:420px; opacity:0.07; z-index:0; pointer-events:none;">` : '';
+  return `
+    <div style="position:relative; font-family:Arial,sans-serif; padding:24px; max-width:700px;">
+      ${watermark}
+      <div style="position:relative; z-index:1;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1F4E78; padding-bottom:12px; margin-bottom:16px;">
+        <div><h2 style="margin:0; color:#1F4E78;">${escapeHtml(cfg.name||'SOCIÉTÉ')}</h2>
+        <div style="font-size:12px; color:#555;">${escapeHtml(cfg.address||'')}</div></div>
+        <div style="text-align:right; font-size:13px;"><b>Bulletin de paie</b><br>Période : ${période}</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px;">
+        <tr><td style="padding:4px 0;"><b>Salarié :</b> ${escapeHtml(label)}</td><td><b>Matricule :</b> ${escapeHtml(agent.matricule||'')}</td></tr>
+        <tr><td style="padding:4px 0;"><b>Fonction :</b> ${escapeHtml(agent.fonction||'')}</td><td><b>Type de contrat :</b> ${escapeHtml(agent.typeContrat||'')}</td></tr>
+        <tr><td style="padding:4px 0;"><b>Ancienneté :</b> ${p.years} an(s)</td><td></td></tr>
+      </table>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead><tr style="background:#f0f0f0;"><th style="text-align:left; padding:6px; border:1px solid #ddd;">Élément</th><th style="text-align:right; padding:6px; border:1px solid #ddd;">Montant</th></tr></thead>
+        <tbody>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Salaire de base</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.base)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Prime de transport</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.primeTransport)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Prime de logement</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.primeLogement)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Prime d'ancienneté (${p.anciennetePct.toFixed(1)}%)</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.primeAnciennete)}</td></tr>
+          <tr style="font-weight:bold; background:#f7f7f7;"><td style="padding:6px; border:1px solid #ddd;">Salaire brut</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.brut)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Cotisation CNSS salariale</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">- ${fmtFcfa(p.cnssSal)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">Cotisation CNAMGS salariale</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">- ${fmtFcfa(p.cnamgsSal)}</td></tr>
+          <tr style="font-weight:bold;"><td style="padding:6px; border:1px solid #ddd;">Salaire net imposable</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.netImposable)}</td></tr>
+          <tr><td style="padding:6px; border:1px solid #ddd;">IRPP</td><td style="text-align:right; padding:6px; border:1px solid #ddd;">- ${fmtFcfa(p.irpp)}</td></tr>
+          <tr style="font-weight:bold; background:#e8f0e8;"><td style="padding:8px; border:1px solid #ddd;">NET A PAYER</td><td style="text-align:right; padding:8px; border:1px solid #ddd;">${fmtFcfa(p.net)}</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:10.5px; color:#888; margin-top:18px;">Document généré automatiquement a partir des paramètres de paie configures dans le logiciel. A vérifier avec les taux CNSS/CNAMGS/DGI en vigueur avant remise officielle au salarié.</p>
+      </div>
+    </div>`;
+}
+function printPayslip(i){
+  const a = agents[i];
+  if(!a) return;
+  const p = calcPaie(a);
+  const win = window.open('', '_blank', 'width=800,height=900');
+  if(!win){ alert("Le navigateur a bloque la fenêtre d'impression. Autorise les pop-ups."); return; }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><title>Bulletin de paie</title></head><body>${payslipHtml(a,p)}</body></html>`);
+  win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 400);
+}
+function printRegistrePaie(){
+  if(!agents.length) return;
+  const now = new Date();
+  const période = now.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  let rows = '';
+  let totalBrut=0, totalNet=0, totalCout=0;
+  agents.forEach(a=>{
+    const p = calcPaie(a);
+    totalBrut += p.brut; totalNet += p.net; totalCout += p.coutEmployeur;
+    const label = `${a.prenom} ${a.nom}`.trim() || a.matricule || 'Agent';
+    rows += `<tr>
+      <td style="padding:6px; border:1px solid #ddd;">${escapeHtml(label)}</td>
+      <td style="padding:6px; border:1px solid #ddd;">${escapeHtml(a.matricule||'')}</td>
+      <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.brut)}</td>
+      <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.cnssSal+p.cnamgsSal)}</td>
+      <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.irpp)}</td>
+      <td style="text-align:right; padding:6px; border:1px solid #ddd;"><b>${fmtFcfa(p.net)}</b></td>
+      <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(p.coutEmployeur)}</td>
+    </tr>`;
+  });
+  const html = `<!DOCTYPE html><html><head><title>Registre de paie</title></head><body>
+    <div style="font-family:Arial,sans-serif; padding:24px;">
+      <h2 style="color:#1F4E78;">${escapeHtml(cfg.name||'SOCIÉTÉ')} — Registre de paie</h2>
+      <div style="font-size:13px; margin-bottom:14px;">Période : ${période}</div>
+      <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+        <thead><tr style="background:#f0f0f0;">
+          <th style="text-align:left; padding:6px; border:1px solid #ddd;">Agent</th>
+          <th style="text-align:left; padding:6px; border:1px solid #ddd;">Matricule</th>
+          <th style="text-align:right; padding:6px; border:1px solid #ddd;">Brut</th>
+          <th style="text-align:right; padding:6px; border:1px solid #ddd;">Cotisations sal.</th>
+          <th style="text-align:right; padding:6px; border:1px solid #ddd;">IRPP</th>
+          <th style="text-align:right; padding:6px; border:1px solid #ddd;">Net</th>
+          <th style="text-align:right; padding:6px; border:1px solid #ddd;">Cout employeur</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="font-weight:bold; background:#f7f7f7;">
+          <td colspan="2" style="padding:6px; border:1px solid #ddd;">Total</td>
+          <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(totalBrut)}</td>
+          <td></td><td></td>
+          <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(totalNet)}</td>
+          <td style="text-align:right; padding:6px; border:1px solid #ddd;">${fmtFcfa(totalCout)}</td>
+        </tr></tfoot>
+      </table>
+      <p style="font-size:10.5px; color:#888; margin-top:18px;">Document généré automatiquement a partir des paramètres de paie configures dans le logiciel. A vérifier avec les taux CNSS/CNAMGS/DGI en vigueur.</p>
+    </div></body></html>`;
+  const win = window.open('', '_blank', 'width=1000,height=900');
+  if(!win){ alert("Le navigateur a bloque la fenêtre d'impression. Autorise les pop-ups."); return; }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 400);
+}
+
+/* ===================== ALERTES ===================== */
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((d-today)/86400000);
+}
+function renderAlerts(){
+  const thresholdEl = document.getElementById('alert-threshold');
+  const threshold = thresholdEl ? (parseInt(thresholdEl.value,10) || 30) : 30;
+
+  const contratAlerts = [];
+  const vaccinAlerts = [];
+  agents.forEach((a,index)=>{
+    const label = `${a.prenom} ${a.nom}`.trim() || a.matricule || 'Agent sans nom';
+    if(a.dateFinContrat){
+      const d = daysUntil(a.dateFinContrat);
+      if(d !== null && d <= threshold){
+        contratAlerts.push({label, matricule:a.matricule, days:d, date:a.dateFinContrat, type:a.typeContrat, index});
+      }
+    }
+    if(a.dateRappelVaccin){
+      const d = daysUntil(a.dateRappelVaccin);
+      if(d !== null && d <= threshold){
+        vaccinAlerts.push({label, matricule:a.matricule, days:d, date:a.dateRappelVaccin, index});
+      }
+    } else if(a.vaccinAJour === false){
+      vaccinAlerts.push({label, matricule:a.matricule, days:null, date:null, index});
+    }
+  });
+  contratAlerts.sort((x,y)=>(x.days??9999)-(y.days??9999));
+  vaccinAlerts.sort((x,y)=>(x.days??9999)-(y.days??9999));
+
+  const contratClientAlerts = [];
+  clients.forEach((c,index)=>{
+    if(!c.dateFinContrat) return;
+    const d = daysUntil(c.dateFinContrat);
+    if(d !== null && d <= threshold){
+      contratClientAlerts.push({label:c.nom||'Client sans nom', matricule:'', days:d, date:c.dateFinContrat, type:c.typeService, index});
+    }
+  });
+  contratClientAlerts.sort((x,y)=>(x.days??9999)-(y.days??9999));
+
+  const vaccinChienAlerts = [];
+  chiens.forEach((c,index)=>{
+    const label = c.nom || 'Chien sans nom';
+    if(c.dateRappelVaccin){
+      const d = daysUntil(c.dateRappelVaccin);
+      if(d !== null && d <= threshold){
+        vaccinChienAlerts.push({label, matricule:c.race||'', days:d, date:c.dateRappelVaccin, index});
+      }
+    } else if(c.vaccinAJour === false){
+      vaccinChienAlerts.push({label, matricule:c.race||'', days:null, date:null, index});
+    }
+  });
+  vaccinChienAlerts.sort((x,y)=>(x.days??9999)-(y.days??9999));
+
+  const allAlerts = [...contratAlerts, ...vaccinAlerts, ...contratClientAlerts, ...vaccinChienAlerts];
+  const totalUrgent = allAlerts.filter(x=>x.days===null || x.days<=0).length;
+  const countEl = document.getElementById('alert-count');
+  const totalAlerts = allAlerts.length;
+  if(totalAlerts>0){
+    countEl.style.display = 'inline-block';
+    countEl.textContent = totalAlerts;
+    countEl.className = 'status-pill ' + (totalUrgent>0 ? 'missing' : 'ok');
+  } else {
+    countEl.style.display = 'none';
+  }
+
+  document.getElementById('alerts-contrats').innerHTML = contratAlerts.length ? contratAlerts.map(al=>alertRowHtml(
+    al.label, al.matricule, `Contrat ${al.type||''}`, al.days, al.date, 'agent', al.index
+  )).join('') : '<div class="empty-state">Aucun contrat a renouveler dans le délai choisi.</div>';
+
+  document.getElementById('alerts-contrats-clients').innerHTML = contratClientAlerts.length ? contratClientAlerts.map(al=>alertRowHtml(
+    al.label, '', `Service ${al.type||''}`, al.days, al.date, 'client', al.index
+  )).join('') : '<div class="empty-state">Aucun contrat client a renouveler dans le délai choisi.</div>';
+
+  document.getElementById('alerts-vaccins').innerHTML = vaccinAlerts.length ? vaccinAlerts.map(al=>alertRowHtml(
+    al.label, al.matricule, 'Vaccin', al.days, al.date, 'agent', al.index
+  )).join('') : '<div class="empty-state">Aucun rappel de vaccin a prévoir dans le délai choisi.</div>';
+
+  document.getElementById('alerts-vaccins-chiens').innerHTML = vaccinChienAlerts.length ? vaccinChienAlerts.map(al=>alertRowHtml(
+    al.label, al.matricule, 'Vaccin', al.days, al.date, 'chien', al.index
+  )).join('') : '<div class="empty-state">Aucun rappel de vaccin a prévoir dans le délai choisi.</div>';
+}
+function alertRowHtml(label, matricule, what, days, date, kind, index){
+  let cls = 'soon', when;
+  if(days === null){ cls = 'urgent'; when = 'Statut inconnu'; }
+  else if(days <= 0){ cls = 'urgent'; when = days===0 ? "Aujourd'hui" : `Depasse de ${Math.abs(days)} j`; }
+  else { when = `Dans ${days} j`; }
+  return `<div class="alert-row ${cls}" style="cursor:pointer;" onclick="goToRecord('${kind}', ${index})" title="Cliquer pour ouvrir cette fiche">
+    <div class="dot"></div>
+    <div class="who">${escapeHtml(label)} ${matricule?('· '+escapeHtml(matricule)):''}</div>
+    <div class="what">${escapeHtml(what)}${date?(' — échéance '+escapeHtml(date)):''}</div>
+    <div class="when">${when}</div>
+  </div>`;
+}
+function goToRecord(kind, index){
+  const tabMap = {agent:'tab-agents', client:'tab-clients', chien:'tab-chiens'};
+  const wrapMap = {agent:'agents-table-wrap', client:'clients-table-wrap', chien:'chiens-table-wrap'};
+  const attrMap = {agent:'data-agent-index', client:'data-client-index', chien:'data-chien-index'};
+  const permMap = {agent:'agents', client:'clients', chien:'chiens'};
+  const u = users.find(x=>x.id===currentUser);
+  const perms = userPermissions(u);
+  if(!perms[permMap[kind]]){
+    alert("Tu n'as pas accès a cette section. Demande a un administrateur de t'accorder la permission correspondante.");
+    return;
+  }
+  const btn = document.querySelector(`nav.tabs button[data-tab="${tabMap[kind]}"]`);
+  if(btn) btn.click();
+  setTimeout(()=>{
+    const wrap = document.getElementById(wrapMap[kind]);
+    if(!wrap) return;
+    const row = wrap.querySelector(`tr[${attrMap[kind]}="${index}"]`);
+    if(row){
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      row.style.outline = '2px solid var(--accent)';
+      row.style.outlineOffset = '-2px';
+      setTimeout(()=>{ row.style.outline = ''; }, 2200);
+      const firstInput = row.querySelector('input, select');
+      if(firstInput) firstInput.focus();
+    }
+  }, 60);
+}
+
+
+/* ===================== DESSIN DES CARTES ===================== */
+function hexToRgb(hex){
+  hex = hex.replace('#','');
+  return [parseInt(hex.substr(0,2),16), parseInt(hex.substr(2,2),16), parseInt(hex.substr(4,2),16)];
+}
+function loadImage(src){
+  return new Promise((resolve)=>{
+    if(!src){ resolve(null); return; }
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>resolve(null);
+    img.src = src;
+  });
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawImageCover(ctx,img,x,y,w,h){
+  const ir = img.width/img.height, tr = w/h;
+  let sx,sy,sw,sh;
+  if(ir > tr){ sh = img.height; sw = sh*tr; sx = (img.width-sw)/2; sy = 0; }
+  else { sw = img.width; sh = sw/tr; sx = 0; sy = (img.height-sh)/2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+function fitFont(ctx, text, weight, maxWidth, startSize, minSize){
+  let size = startSize;
+  while(size > minSize){
+    ctx.font = `${weight} ${size}px -apple-system, sans-serif`;
+    if(ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  return minSize;
+}
+
+async function drawFront(canvas, agent){
+  canvas.width = CARD_W; canvas.height = CARD_H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = cfg.secondary; ctx.fillRect(0,0,CARD_W,CARD_H);
+
+  const headerH = CARD_H*0.22;
+  ctx.fillStyle = cfg.primary; ctx.fillRect(0,0,CARD_W,headerH);
+
+  let textX = CARD_W*0.04;
+  const logo = await loadImage(cfg.logoDataURL);
+  if(logo){
+    const lh = headerH*0.7, ratio = lh/logo.height, lw = logo.width*ratio;
+    ctx.drawImage(logo, textX, (headerH-lh)/2, lw, lh);
+    textX += lw + 20;
+  }
+  ctx.fillStyle = cfg.textOnPrimary;
+  const nameSize = fitFont(ctx, cfg.name, 700, CARD_W-textX-20, headerH*0.42, 16);
+  ctx.font = `700 ${nameSize}px -apple-system, sans-serif`;
+  ctx.fillText(cfg.name, textX, headerH*0.55);
+  if(cfg.slogan){
+    ctx.font = `400 ${headerH*0.15}px -apple-system, sans-serif`;
+    ctx.fillText(cfg.slogan, textX, headerH*0.85);
+  }
+
+  const labelH = CARD_H*0.10;
+  ctx.fillStyle = '#f0f0f0'; ctx.fillRect(0,headerH,CARD_W,labelH);
+  ctx.fillStyle = cfg.primary;
+  ctx.font = `700 ${labelH*0.5}px -apple-system, sans-serif`;
+  ctx.fillText('CARTE PROFESSIONNELLE', CARD_W*0.04, headerH+labelH*0.68);
+
+  const bodyTop = headerH+labelH, bodyH = CARD_H-bodyTop;
+  const photoSize = bodyH*0.78, photoX = CARD_W*0.04, photoY = bodyTop+(bodyH-photoSize)/2;
+  ctx.save();
+  roundRectPath(ctx, photoX, photoY, photoSize, photoSize, photoSize*0.12);
+  ctx.clip();
+  const photo = await loadImage(agent.photoDataURL);
+  if(photo){ drawImageCover(ctx, photo, photoX, photoY, photoSize, photoSize); }
+  else {
+    ctx.fillStyle = '#c8c8c8'; ctx.fillRect(photoX,photoY,photoSize,photoSize);
+    ctx.fillStyle = '#969696';
+    ctx.beginPath(); ctx.ellipse(photoX+photoSize*0.5, photoY+photoSize*0.32, photoSize*0.18, photoSize*0.18, 0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(photoX+photoSize*0.5, photoY+photoSize*0.95, photoSize*0.32, photoSize*0.32, 0,0,7); ctx.fill();
+  }
+  ctx.restore();
+
+  const infoX = photoX+photoSize+CARD_W*0.04, infoW = CARD_W-infoX-CARD_W*0.04;
+  let y = bodyTop+bodyH*0.14;
+  const nom = `${agent.prenom} ${agent.nom}`.trim().toUpperCase();
+  ctx.fillStyle = '#1e1e1e';
+  const nomSize = fitFont(ctx, nom, 700, infoW, bodyH*0.20, 14);
+  ctx.font = `700 ${nomSize}px -apple-system, sans-serif`;
+  ctx.fillText(nom, infoX, y); y += nomSize*1.15;
+
+  ctx.fillStyle = cfg.primary;
+  const fonctionSize = fitFont(ctx, agent.fonction, 700, infoW, bodyH*0.13, 12);
+  ctx.font = `700 ${fonctionSize}px -apple-system, sans-serif`;
+  ctx.fillText(agent.fonction, infoX, y); y += fonctionSize*1.5;
+
+  ctx.fillStyle = '#3c3c3c';
+  ctx.font = `400 ${bodyH*0.095}px -apple-system, sans-serif`;
+  const lignes = [];
+  if(agent.service) lignes.push(`Service : ${agent.service}`);
+  if(agent.matricule) lignes.push(`Matricule : ${agent.matricule}`);
+  if(agent.telephone) lignes.push(`Tél. : ${agent.telephone}`);
+  lignes.forEach(l=>{ ctx.fillText(l, infoX, y); y += bodyH*0.14; });
+
+  const footerParts = [cfg.address, cfg.phone, cfg.web].filter(Boolean);
+  if(footerParts.length){
+    const footerText = footerParts.join('   |   ');
+    const fh = CARD_H*0.075;
+    ctx.fillStyle = cfg.primary; ctx.fillRect(0, CARD_H-fh, CARD_W, fh);
+    ctx.fillStyle = cfg.textOnPrimary;
+    ctx.font = `400 ${fh*0.42}px -apple-system, sans-serif`;
+    ctx.fillText(footerText, CARD_W*0.04, CARD_H-fh*0.32);
+  }
+}
+
+function makeQRCanvas(text, size, bgColor){
+  return new Promise(resolve=>{
+    const bg = /^#[0-9a-fA-F]{6}$/.test(bgColor||'') ? bgColor : '#FFFFFF';
+    function attempt(opts, onDone){
+      try{
+        const holder = document.createElement('canvas');
+        QRCode.toCanvas(holder, text, opts, err=>{ onDone(err ? null : holder); });
+      }catch(e){ onDone(null); }
+    }
+    if(typeof QRCode === 'undefined'){ resolve(null); return; }
+    attempt({width:size, margin:1, color:{dark:'#1e1e1e', light:bg}}, holder1=>{
+      if(holder1){ resolve(holder1); return; }
+      attempt({width:size, margin:1}, holder2=>{ resolve(holder2); });
+    });
+  });
+}
+
+async function drawBack(canvas, agent){
+  canvas.width = CARD_W; canvas.height = CARD_H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = cfg.secondary; ctx.fillRect(0,0,CARD_W,CARD_H);
+
+  const bandH = CARD_H*0.12;
+  ctx.fillStyle = cfg.primary; ctx.fillRect(0,0,CARD_W,bandH);
+  ctx.fillStyle = cfg.textOnPrimary;
+  ctx.font = `700 ${bandH*0.4}px -apple-system, sans-serif`;
+  ctx.fillText(cfg.name, CARD_W*0.04, bandH*0.65);
+
+  const logo = await loadImage(cfg.logoDataURL);
+  if(logo){
+    ctx.save(); ctx.globalAlpha = 0.07;
+    const lh = CARD_H*0.55, ratio = lh/logo.height, lw = logo.width*ratio;
+    ctx.drawImage(logo, (CARD_W-lw)/2, bandH+(CARD_H-bandH-lh)/2, lw, lh);
+    ctx.restore();
+  }
+
+  const pad = CARD_W*0.04;
+  let y = bandH + CARD_H*0.12;
+  ctx.fillStyle = '#333333';
+  ctx.font = `400 ${CARD_H*0.052}px -apple-system, sans-serif`;
+  wrapText(ctx, cfg.backnote, pad, y, CARD_W*0.58, CARD_H*0.075);
+
+  const sigY = CARD_H*0.62;
+  const sigLineW = CARD_W*0.30;
+  const sigImg = await loadImage(cfg.signatureDataURL);
+  if(sigImg){
+    const sh = CARD_H*0.14, ratio = sh/sigImg.height, sw = Math.min(sigImg.width*ratio, sigLineW);
+    ctx.drawImage(sigImg, pad + (sigLineW-sw)/2, sigY-sh-2, sw, sh);
+  }
+  ctx.strokeStyle = '#9a9a9a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad, sigY); ctx.lineTo(pad+sigLineW, sigY); ctx.stroke();
+  ctx.fillStyle = '#6b6b6b'; ctx.font = `400 ${CARD_H*0.045}px -apple-system, sans-serif`;
+  ctx.fillText('Signature de la direction', pad, sigY+CARD_H*0.05);
+
+  const qrSize = CARD_H*0.42;
+  const qrText = `MATRICULE:${agent.matricule}\nNOM:${agent.prenom} ${agent.nom}\nFONCTION:${agent.fonction}\nTEL:${agent.telephone}`;
+  const qr = await makeQRCanvas(qrText, qrSize, cfg.secondary);
+  const qrX = CARD_W - pad - qrSize, qrY = bandH + (CARD_H-bandH)*0.14;
+  if(qr){
+    ctx.drawImage(qr, qrX, qrY, qrSize, qrSize);
+  } else {
+    ctx.fillStyle = '#f2f2f2'; ctx.fillRect(qrX,qrY,qrSize,qrSize);
+    ctx.strokeStyle = '#c8c8c8'; ctx.strokeRect(qrX,qrY,qrSize,qrSize);
+    ctx.fillStyle = '#999999'; ctx.font = `400 ${CARD_H*0.03}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('QR indisponible', qrX+qrSize/2, qrY+qrSize/2);
+    ctx.fillText('(vérifier connexion internet)', qrX+qrSize/2, qrY+qrSize/2 + CARD_H*0.045);
+    ctx.textAlign = 'left';
+  }
+  ctx.fillStyle = '#6b6b6b'; ctx.font = `400 ${CARD_H*0.04}px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Vérification', qrX+qrSize/2, qrY+qrSize+CARD_H*0.045);
+  ctx.textAlign = 'left';
+
+  const footerParts = [cfg.address, cfg.phone, cfg.web].filter(Boolean);
+  if(footerParts.length){
+    const footerText = footerParts.join('   |   ');
+    const fh = CARD_H*0.075;
+    ctx.fillStyle = cfg.primary; ctx.fillRect(0, CARD_H-fh, CARD_W, fh);
+    ctx.fillStyle = cfg.textOnPrimary;
+    ctx.font = `400 ${fh*0.4}px -apple-system, sans-serif`;
+    ctx.fillText(footerText, pad, CARD_H-fh*0.32);
+  }
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '';
+  for(let n=0; n<words.length; n++){
+    const test = line + words[n] + ' ';
+    if(ctx.measureText(test).width > maxWidth && n>0){
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else { line = test; }
+  }
+  ctx.fillText(line, x, y);
+}
+
+/* ===================== GÉNÉRATION / EXPORT ===================== */
+async function renderAllCards(){
+  readConfig();
+  const grid = document.getElementById('cards-grid');
+  if(!agents.length){
+    grid.innerHTML = '<div class="empty-state">Aucun agent. Retourne a l\'onglet Agents pour en ajouter.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  document.getElementById('btn-render').textContent = 'Génération en cours...';
+  document.getElementById('btn-render').disabled = true;
+
+  for(let i=0;i<agents.length;i++){
+    const a = agents[i];
+    const block = document.createElement('div');
+    block.className = 'agent-card-block';
+    const label = `${a.prenom} ${a.nom}`.trim() || `Agent ${i+1}`;
+    block.innerHTML = `
+      <div class="name">${escapeHtml(label)} ${a.matricule?('· '+escapeHtml(a.matricule)):''}</div>
+      <div class="canvases">
+        <div style="flex:1"><div class="side-label">Recto</div><canvas id="front-${i}"></canvas></div>
+        <div style="flex:1"><div class="side-label">Verso</div><canvas id="back-${i}"></canvas></div>
+      </div>
+      <div class="dl-row">
+        <button class="btn ghost small" onclick="downloadCanvas('front-${i}','${slug(a)}_recto.png')">PNG recto</button>
+        <button class="btn ghost small" onclick="downloadCanvas('back-${i}','${slug(a)}_verso.png')">PNG verso</button>
+        <button class="btn primary small" onclick="printFromPreview(${i})">🖨 Imprimer</button>
+      </div>`;
+    grid.appendChild(block);
+    const fc = document.getElementById(`front-${i}`), bc = document.getElementById(`back-${i}`);
+    await drawFront(fc, a);
+    await drawBack(bc, a);
+  }
+  document.getElementById('btn-render').textContent = 'Regenerer les aperçus';
+  document.getElementById('btn-render').disabled = false;
+  document.getElementById('btn-pdf').disabled = false;
+  document.getElementById('btn-print').disabled = false;
+}
+function slug(a){ return (a.matricule || `${a.prenom}${a.nom}` || 'agent').replace(/[^a-z0-9]/gi,'_'); }
+function downloadCanvas(id, filename){
+  const c = document.getElementById(id);
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+async function exportAllPDF(){
+  if(!agents.length) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'in', format:[3.375,2.125]});
+  for(let i=0;i<agents.length;i++){
+    const fc = document.getElementById(`front-${i}`), bc = document.getElementById(`back-${i}`);
+    if(!fc || !bc) continue;
+    if(i>0) doc.addPage([3.375,2.125], 'landscape');
+    doc.addImage(fc.toDataURL('image/png'), 'PNG', 0, 0, 3.375, 2.125);
+    doc.addPage([3.375,2.125], 'landscape');
+    doc.addImage(bc.toDataURL('image/png'), 'PNG', 0, 0, 3.375, 2.125);
+  }
+  doc.save('badges_recto_verso.pdf');
+}
+
+function openPrintWindow(dataUrls){
+  if(!dataUrls.length) return;
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if(!win){
+    alert("Le navigateur a bloque la fenêtre d'impression. Autorise les pop-ups pour ce site puis reessaie.");
+    return;
+  }
+  const imgsHtml = dataUrls.map(u=>`<img class="card-print" src="${u}">`).join('');
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><title>Impression des cartes</title>
+    <style>
+      @page{ size: 85.6mm 53.98mm; margin:0; }
+      *{ margin:0; padding:0; box-sizing:border-box; }
+      body{ background:#fff; }
+      .card-print{ display:block; width:85.6mm; height:53.98mm; object-fit:contain; page-break-after:always; }
+      .card-print:last-child{ page-break-after:auto; }
+    </style>
+  </head><body>${imgsHtml}</body></html>`);
+  win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 500);
+}
+
+function printAllCards(){
+  if(!agents.length) return;
+  const urls = [];
+  for(let i=0;i<agents.length;i++){
+    const fc = document.getElementById(`front-${i}`), bc = document.getElementById(`back-${i}`);
+    if(!fc || !bc) continue;
+    urls.push(fc.toDataURL('image/png'), bc.toDataURL('image/png'));
+  }
+  openPrintWindow(urls);
+}
+
+function printFromPreview(i){
+  const fc = document.getElementById(`front-${i}`), bc = document.getElementById(`back-${i}`);
+  if(!fc || !bc) return;
+  openPrintWindow([fc.toDataURL('image/png'), bc.toDataURL('image/png')]);
+}
+
+async function printSingleAgent(i){
+  const a = agents[i];
+  if(!a) return;
+  const btn = document.getElementById(`print-agent-${i}`);
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
+  try{
+    const fc = document.createElement('canvas');
+    const bc = document.createElement('canvas');
+    await drawFront(fc, a);
+    await drawBack(bc, a);
+    openPrintWindow([fc.toDataURL('image/png'), bc.toDataURL('image/png')]);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🖨'; }
+  }
+}
+
+/* ===================== PRISE DE PHOTO (CAMÉRA) ===================== */
+let camStream = null;
+let camAgentIndex = null;
+let camDraftMode = false;
+let camDevices = [];
+let camCaptured = false;
+
+async function openCamera(i, draftMode){
+  camDraftMode = !!draftMode;
+  camAgentIndex = camDraftMode ? null : i;
+  camCaptured = false;
+  document.getElementById('cam-modal').classList.add('open');
+  document.getElementById('cam-error-holder').innerHTML = '';
+  document.getElementById('cam-video').style.display = 'block';
+  document.getElementById('cam-canvas').style.display = 'none';
+  document.getElementById('cam-guide').style.display = 'block';
+  document.getElementById('cam-capture-btn').textContent = 'Capturer';
+  document.getElementById('cam-select-wrap').style.display = 'none';
+  const label = camDraftMode
+    ? (`${document.getElementById('af-prenom').value} ${document.getElementById('af-nom').value}`.trim() || 'Nouvel agent')
+    : (`${agents[i].prenom} ${agents[i].nom}`.trim() || `Agent ${i+1}`);
+  document.getElementById('cam-title').textContent = `Prendre la photo — ${label}`;
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showCamError("Cette fonction nécessite un navigateur moderne (Chrome, Edge, Firefox) et une connexion sécurisée (https ou fichier ouvert localement avec l'accès caméra autorisé). Tu peux sinon importer une photo depuis un fichier.");
+    return;
+  }
+  try{
+    await startStream();
+    await refreshCameraList();
+  }catch(err){
+    let msg = "Impossible d'accéder à la caméra. ";
+    if(err.name === 'NotAllowedError') msg += "L'accès a été refusé — autorise la caméra pour ce site dans les paramètres du navigateur.";
+    else if(err.name === 'NotFoundError') msg += "Aucune caméra détectée sur cet appareil.";
+    else msg += "Vérifie qu'aucune autre application n'utilise déjà la caméra, et que la page est ouverte en HTTPS (ou en local avec accès autorisé).";
+    showCamError(msg);
+  }
+}
+
+async function refreshCameraList(){
+  try{
+    const list = await navigator.mediaDevices.enumerateDevices();
+    camDevices = list.filter(d=>d.kind === 'videoinput');
+    const wrap = document.getElementById('cam-select-wrap');
+    const select = document.getElementById('cam-device-select');
+    if(camDevices.length > 1){
+      const activeId = camStream && camStream.getVideoTracks()[0] ? camStream.getVideoTracks()[0].getSettings().deviceId : null;
+      select.innerHTML = camDevices.map((d,idx)=>
+        `<option value="${escapeHtml(d.deviceId)}" ${d.deviceId===activeId?'selected':''}>${escapeHtml(d.label || 'Caméra ' + (idx+1))}</option>`
+      ).join('');
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+  }catch(e){}
+}
+async function onCameraSelected(deviceId){
+  try{ await startStream(deviceId); }
+  catch(e){ showCamError("Impossible d'utiliser cette caméra. Vérifie qu'elle est bien branchée et non utilisée par une autre application."); }
+}
+
+async function startStream(deviceId){
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); }
+  const constraints = deviceId
+    ? {video:{deviceId:{exact:deviceId}}, audio:false}
+    : {video:{facingMode:'user'}, audio:false};
+  camStream = await navigator.mediaDevices.getUserMedia(constraints);
+  const video = document.getElementById('cam-video');
+  video.srcObject = camStream;
+}
+
+function showCamError(msg){
+  document.getElementById('cam-error-holder').innerHTML = `<div class="cam-error">${escapeHtml(msg)}</div>`;
+}
+
+function captureOrRetake(){
+  if(!camCaptured){
+    const video = document.getElementById('cam-video');
+    const canvas = document.getElementById('cam-canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width,0); ctx.scale(-1,1); // effet miroir naturel
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    video.style.display = 'none';
+    canvas.style.display = 'block';
+    document.getElementById('cam-guide').style.display = 'none';
+    document.getElementById('cam-capture-btn').textContent = 'Utiliser cette photo';
+    camCaptured = true;
+    addRetakeButton();
+  } else {
+    const canvas = document.getElementById('cam-canvas');
+    const dataURL = canvas.toDataURL('image/png');
+    if(camDraftMode){
+      agentFormPhotoDataURL = dataURL;
+      updateAgentFormPhotoPreview();
+    } else {
+      const a = agents[camAgentIndex];
+      a.photoDataURL = dataURL;
+      if(!a.photoFilename) a.photoFilename = `${slug(a)}_webcam.png`;
+      renderAgentsTable();
+      persistAll();
+    }
+    closeCamera();
+  }
+}
+function addRetakeButton(){
+  if(document.getElementById('cam-retake-btn')) return;
+  const btn = document.createElement('button');
+  btn.className = 'btn ghost';
+  btn.id = 'cam-retake-btn';
+  btn.textContent = 'Reprendre';
+  btn.onclick = retakePhoto;
+  document.querySelector('.modal-actions').insertBefore(btn, document.getElementById('cam-capture-btn'));
+}
+function retakePhoto(){
+  camCaptured = false;
+  document.getElementById('cam-video').style.display = 'block';
+  document.getElementById('cam-canvas').style.display = 'none';
+  document.getElementById('cam-guide').style.display = 'block';
+  document.getElementById('cam-capture-btn').textContent = 'Capturer';
+  const rb = document.getElementById('cam-retake-btn');
+  if(rb) rb.remove();
+}
+function closeCamera(){
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream = null; }
+  document.getElementById('cam-modal').classList.remove('open');
+  const rb = document.getElementById('cam-retake-btn');
+  if(rb) rb.remove();
+  camCaptured = false;
+}
+
+/* ===================== DEMARRAGE ===================== */
+(function initApp(){
+  bootstrapAuth();
+})();
+</script>
+</body>
+</html>
