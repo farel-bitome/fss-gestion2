@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "FSS-GESTION - gestion des agents, badges, paie et alertes",
   "main": "main.js",
-  "author": "FALLSERVICES&SOLUTIONS",
+  "author": "FALLSERVICES ET SOLUTIONS",
   "private": true,
   "scripts": {
     "start": "electron .",

@@ -21,7 +21,9 @@ jobs:
         run: npm install
 
       - name: Construire le .exe
-        run: npm run dist
+        run: npm run dist -- --publish=never
+        env:
+          DEBUG: electron-builder
 
       - name: Publier le .exe construit
         uses: actions/upload-artifact@v4
