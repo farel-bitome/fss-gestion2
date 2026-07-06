@@ -256,6 +256,7 @@
     <h1>FSS-GESTION</h1>
     <p>Paramètres société (en haut) → agents → génération recto/verso</p>
   </div>
+  <span id="network-pill" class="counter-badge" style="background:transparent;border-color:#3a4454;color:#cfd6e0;margin-right:4px; display:none;">🌐 Réseau</span>
   <span id="user-pill" class="counter-badge" style="background:transparent;border-color:#3a4454;color:#cfd6e0;margin-right:4px;"></span>
   <button class="btn ghost" id="btn-open-settings" onclick="openSettings()" style="background:transparent; border-color:#3a4454; color:#fff;">⚙ Paramètres société</button>
   <button class="btn ghost" onclick="logout()" style="background:transparent; border-color:#3a4454; color:#fff;">Deconnexion</button>
@@ -611,6 +612,7 @@
       <button class="sub-tab-btn" data-subtab="settings-tab-apparence">Apparence</button>
       <button class="sub-tab-btn" data-subtab="settings-tab-users">Utilisateurs</button>
       <button class="sub-tab-btn" data-subtab="settings-tab-backup">Sauvegarde</button>
+      <button class="sub-tab-btn" data-subtab="settings-tab-network">Reseau</button>
     </div>
 
     <div class="sub-panel active" id="settings-tab-identite">
@@ -729,6 +731,21 @@
       </div>
     </div>
 
+    <div class="sub-panel" id="settings-tab-network">
+      <button class="btn ghost small" onclick="closeSettings()" style="margin-bottom:14px;">← Retour</button>
+      <label class="field" style="margin-bottom:10px;"><span>Partage en reseau local</span></label>
+      <div id="network-not-available" style="display:none;">
+        <p class="hint">Cette fonction n'est disponible que dans la version installee (.exe) du logiciel, pas dans un navigateur.</p>
+      </div>
+      <div id="network-available">
+        <p class="hint" style="margin-bottom:14px;">Choisis un dossier partage sur ton reseau local (accessible depuis tous les ordinateurs concernes). Une fois configure, ce logiciel lira et ecrira ses données dans ce dossier, et se synchronisera automatiquement toutes les 5 secondes avec les autres ordinateurs utilisant le même dossier.</p>
+        <div id="network-status" style="padding:12px; border:1px solid var(--line); border-radius:9px; margin-bottom:14px; font-size:13px;"></div>
+        <button class="btn primary small" onclick="chooseNetworkFolder()">📁 Choisir le dossier partage</button>
+        <button class="btn ghost small" onclick="clearNetworkFolder()">Revenir au stockage local (desactiver)</button>
+        <p class="hint" style="margin-top:14px;">⚠️ En cas de modification simultanee par deux personnes a la meme seconde, la derniere sauvegarde l'emporte. Convient bien a une petite equipe, pas a un usage intensif simultane.</p>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn primary" onclick="closeSettings()">Enregistrer et fermer</button>
     </div>
@@ -740,8 +757,41 @@ function openSettings(){
   document.getElementById('settings-modal').classList.add('open');
   drawHeaderPreview();
   renderUsersList();
+  refreshNetworkStatus();
 }
 function closeSettings(){ readConfig(); persistAll(); document.getElementById('settings-modal').classList.remove('open'); }
+
+async function refreshNetworkStatus(){
+  const availableBox = document.getElementById('network-available');
+  const notAvailableBox = document.getElementById('network-not-available');
+  if(!window.electronAPI){
+    availableBox.style.display = 'none';
+    notAvailableBox.style.display = 'block';
+    return;
+  }
+  availableBox.style.display = 'block';
+  notAvailableBox.style.display = 'none';
+  const folder = await window.electronAPI.getSharedFolder();
+  const statusEl = document.getElementById('network-status');
+  if(folder){
+    statusEl.innerHTML = `<b style="color:var(--ok);">Actif</b> — dossier : <code>${escapeHtml(folder)}</code>`;
+  } else {
+    statusEl.innerHTML = `<b style="color:var(--muted);">Non configure</b> — données stockées localement sur cet ordinateur uniquement.`;
+  }
+}
+async function chooseNetworkFolder(){
+  if(!window.electronAPI) return;
+  const folder = await window.electronAPI.chooseSharedFolder();
+  if(!folder) return;
+  await persistAll(); // pousse immediatement les données actuelles vers le nouveau dossier partage
+  location.reload();
+}
+async function clearNetworkFolder(){
+  if(!window.electronAPI) return;
+  if(!confirm("Revenir au stockage local ? Ce poste n'utilisera plus le dossier partage.")) return;
+  await window.electronAPI.clearSharedFolder();
+  location.reload();
+}
 document.querySelectorAll('.sub-tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.sub-tab-btn').forEach(b=>b.classList.remove('active'));
@@ -802,7 +852,7 @@ const TAB_PERMISSION_MAP = {
 };
 const SUBTAB_PERMISSION_MAP = {
   'settings-tab-identite':'parametres', 'settings-tab-apparence':'parametres', 'settings-tab-users':'utilisateurs',
-  'settings-tab-backup':'utilisateurs'
+  'settings-tab-backup':'utilisateurs', 'settings-tab-network':'utilisateurs'
 };
 
 function userPermissions(u){
@@ -846,6 +896,7 @@ function logout(){
 async function onAuthenticated(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('user-pill').textContent = currentUser || '';
+  document.getElementById('network-pill').style.display = isNetworkedMode ? 'inline-block' : 'none';
   renderAgentsTable();
   renderChiensTable();
   renderClientsTable();
@@ -979,8 +1030,16 @@ function renderUsersList(){
 /* ===================== SAUVEGARDE LOCALE ===================== */
 // Sauvegarde automatique sur cet appareil/navigateur. Pour transporter les
 // données vers un autre ordinateur, utilise l'export/import Excel.
+let isNetworkedMode = false;
+
 async function persistAll(){
   const payload = JSON.stringify({agents, cfg, users, chiens, clients, paieCfg});
+  if(window.electronAPI && isNetworkedMode){
+    const ok = await window.electronAPI.saveData(payload);
+    if(ok) return;
+    // si l'ecriture reseau echoue (dossier inaccessible), on continue quand meme
+    // en local pour ne pas perdre les modifications de cette session.
+  }
   try{
     if(window.storage){ await window.storage.set('cp_data', payload, false); return; }
   }catch(e){}
@@ -996,15 +1055,47 @@ function applyLoadedData(data){
 }
 async function restoreAll(){
   let raw = null;
-  try{
-    if(window.storage){ const r = await window.storage.get('cp_data', false); raw = r ? r.value : null; }
-  }catch(e){}
-  if(!raw){ try{ raw = localStorage.getItem('cp_data_fallback'); }catch(e){} }
+
+  if(window.electronAPI){
+    try{
+      isNetworkedMode = await window.electronAPI.isNetworked();
+      if(isNetworkedMode){
+        raw = await window.electronAPI.loadData();
+        startNetworkSync();
+      }
+    }catch(e){ isNetworkedMode = false; }
+  }
+
+  if(!raw){
+    try{
+      if(window.storage){ const r = await window.storage.get('cp_data', false); raw = r ? r.value : null; }
+    }catch(e){}
+    if(!raw){ try{ raw = localStorage.getItem('cp_data_fallback'); }catch(e){} }
+  }
+
   if(raw){
     try{ applyLoadedData(JSON.parse(raw)); }catch(e){}
   }
   if(!users.some(u=>u.id==='BITOME')) users.push({id:'BITOME', pw:'3701', role:'superadmin'});
   normalizeUserPermissions();
+}
+
+let _lastNetworkRaw = null;
+function startNetworkSync(){
+  setInterval(async ()=>{
+    if(!window.electronAPI || !isNetworkedMode) return;
+    if(!currentUser) return; // pas connecte, rien a rafraichir a l'ecran
+    try{
+      const raw = await window.electronAPI.loadData();
+      if(raw && raw !== _lastNetworkRaw){
+        _lastNetworkRaw = raw;
+        applyLoadedData(JSON.parse(raw));
+        renderAgentsTable(); renderChiensTable(); renderClientsTable();
+        renderAlerts();
+        if(document.getElementById('paie-table-wrap')) renderPaieTable();
+      }
+    }catch(e){}
+  }, 5000);
 }
 function exportDatabase(){
   const payload = {
